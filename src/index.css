@@ -1,0 +1,22 @@
+:root {
+  --maze-size: 5;
+}
+
+body {
+  background-color: beige;
+}
+
+.maze {
+  background-color: white;
+  display: grid;
+  height: 80vh;
+  grid-template: repeat(5, 1fr) / repeat(5, 1fr);
+  margin: auto;
+  max-height: 90vw;
+  max-width: 90vw;
+  width: 80vh;
+}
+
+.cell:not(.room) {
+  background-color: black;
+}
