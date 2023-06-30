@@ -20,3 +20,7 @@ body {
 .cell:not(.room) {
   background-color: black;
 }
+
+.room.has-player {
+  border: 1px solid red;
+}
