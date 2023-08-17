@@ -17,10 +17,6 @@ body {
   width: 80vh;
 }
 
-.cell:not(.room) {
-  background-color: black;
-}
-
-.room.has-player {
+.has-player {
   border: 1px solid red;
 }
