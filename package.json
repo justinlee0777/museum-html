@@ -13,5 +13,8 @@
     "rollup-plugin-postcss": "^4.0.2",
     "tslib": "^2.6.1",
     "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "typescript-plugin-css-modules": "^5.0.1"
   }
 }

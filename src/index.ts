@@ -1,5 +1,5 @@
-import './index.css';
-import { RoomData, RoomUI } from './room';
+import RoomData from './rooms/room-data';
+import RoomUI from './rooms/room-ui';
 
 window.addEventListener('DOMContentLoaded', () => {
   const mazeSize = Number(

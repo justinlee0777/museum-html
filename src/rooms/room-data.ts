@@ -1,15 +1,5 @@
-type Position = [number, number];
-
-interface ICell {
-  position: Position;
-
-  top?: ICell;
-  right?: ICell;
-  bottom?: ICell;
-  left?: ICell;
-
-  hasPlayer?: true;
-}
+import ICell from '../models/cell.interface';
+import Position from '../models/position.interface';
 
 interface RoomConfig {
   height: number;
@@ -19,13 +9,11 @@ interface RoomConfig {
   width: number;
 }
 
-type RoomDataConfig = Pick<RoomConfig, 'height' | 'player' | 'width'>;
-
-export class RoomData {
+export default class RoomData {
   private cells: Array<Array<ICell | undefined>>;
   private playerCell?: ICell;
 
-  constructor({ height, width, player }: RoomDataConfig) {
+  constructor({ height, width, player }: RoomConfig) {
     const cells = (this.cells = Array(height)
       .fill(undefined)
       .map((_, y) =>
@@ -99,46 +87,5 @@ export class RoomData {
       this.playerCell = proposedCell;
       proposedCell.hasPlayer = true;
     }
-  }
-}
-
-export class RoomUI {
-  private mazeElement: HTMLElement;
-
-  public draw(data: RoomData): HTMLElement {
-    const cells = [...data.getCells()];
-
-    const hasPlayer = 'has-player';
-
-    if (this.mazeElement) {
-      this.mazeElement.querySelectorAll('.cell').forEach((cellElement, i) => {
-        const cell = cells[i];
-        if (cell.hasPlayer) {
-          cellElement.classList.add(hasPlayer);
-        } else {
-          cellElement.classList.remove(hasPlayer);
-        }
-      });
-    } else {
-      const mazeElement = (this.mazeElement = document.createElement('div'));
-      mazeElement.className = 'maze';
-
-      for (const cell of cells) {
-        mazeElement.appendChild(this.drawCell(cell));
-      }
-
-      return mazeElement;
-    }
-  }
-
-  private drawCell(cell: ICell): HTMLElement {
-    const cellElement = document.createElement('div');
-    cellElement.classList.add('cell');
-
-    if (cell.hasPlayer) {
-      cellElement.classList.add('has-player');
-    }
-
-    return cellElement;
   }
 }
