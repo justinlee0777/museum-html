@@ -1,18 +1,17 @@
 {
   "type": "module",
   "scripts": {
-    "start": "webpack && http-server -c-1 dist",
+    "start": "rm -rf dist && rollup -c && http-server -c-1 dist",
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "css-loader": "^6.8.1",
-    "html-webpack-plugin": "^5.5.3",
+    "@rollup/plugin-html": "^1.0.2",
+    "@rollup/plugin-typescript": "^11.1.2",
     "http-server": "^14.1.1",
-    "mini-css-extract-plugin": "^2.7.6",
     "prettier": "^2.8.8",
-    "ts-loader": "^9.4.4",
-    "typescript": "^5.1.6",
-    "webpack": "^5.88.1",
-    "webpack-cli": "^5.1.4"
+    "rollup": "^3.28.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "tslib": "^2.6.1",
+    "typescript": "^5.1.6"
   }
 }
