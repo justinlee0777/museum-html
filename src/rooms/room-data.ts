@@ -1,28 +1,31 @@
 import ICell from '../models/cell.interface';
+import Direction from '../models/direction.enum';
 import Position from '../models/position.interface';
 
 interface RoomConfig {
   height: number;
-  player?: {
-    position: Position;
-  };
   width: number;
+  starting?: Position;
 }
 
 export default class RoomData {
-  private cells: Array<Array<ICell | undefined>>;
-  private playerCell?: ICell;
+  private startingCell: ICell;
+  private objects: Map<Symbol, ICell>;
 
-  constructor({ height, width, player }: RoomConfig) {
-    const cells = (this.cells = Array(height)
+  constructor({ height, width, starting }: RoomConfig) {
+    let id = 0;
+
+    this.objects = new Map();
+
+    const cells = Array(height)
       .fill(undefined)
       .map((_, y) =>
         Array(width)
           .fill(undefined)
           .map<ICell>((_, x) => ({
-            position: [x, y],
+            id: id++,
           }))
-      ));
+      );
 
     for (let i = 0; i < height; i++) {
       for (let j = 0; j < width; j++) {
@@ -32,60 +35,82 @@ export default class RoomData {
           cell.top = cells[i - 1][j];
         }
         if (j < width - 1) {
-          cell.right = cells[i][j - 1];
+          cell.right = cells[i][j + 1];
         }
         if (i < height - 1) {
           cell.bottom = cells[i + 1][j];
         }
         if (j > 0) {
-          cell.left = cells[i][j + 1];
+          cell.left = cells[i][j - 1];
         }
       }
     }
 
-    if (player) {
-      const { position } = player;
-      this.placePlayer(position);
-    }
+    const [x, y] = starting ?? [0, 0];
+
+    this.startingCell = cells[y][x];
   }
 
-  public *getCells(): Generator<ICell> {
-    const { cells } = this;
-
-    const height = cells.length;
-
-    for (let i = 0; i < height; i++) {
-      const width = cells[i].length;
-      for (let j = 0; j < width; j++) {
-        const cell = cells[i][j];
-
-        yield cell;
-      }
-    }
+  public start(): ICell {
+    return this.startingCell;
   }
 
-  public movePlayer([xd, yd]: Position): void {
-    if (this.playerCell) {
-      const [x, y] = this.playerCell.position;
+  public move(id: Symbol, direction: Direction): Array<ICell> {
+    const cell = this.objects.get(id);
 
-      this.placePlayer([x + xd, y + yd]);
-    } else {
-      throw new Error('');
-    }
-  }
+    if (cell) {
+      let newCell: ICell | undefined;
 
-  public placePlayer([x, y]: Position): void {
-    const proposedCell = this.cells[y]?.[x] ?? null;
-    const validCell = Boolean(proposedCell);
-
-    if (validCell) {
-      if (this.playerCell) {
-        delete this.playerCell.hasPlayer;
-        this.playerCell = null;
+      switch (direction) {
+        case Direction.TOP:
+          newCell = cell.top;
+          break;
+        case Direction.RIGHT:
+          newCell = cell.right;
+          break;
+        case Direction.BOTTOM:
+          newCell = cell.bottom;
+          break;
+        case Direction.LEFT:
+          newCell = cell.left;
+          break;
       }
 
-      this.playerCell = proposedCell;
-      proposedCell.hasPlayer = true;
+      if (newCell) {
+        return this.place(id, newCell);
+      }
     }
+
+    throw new Error('');
+  }
+
+  public place(id: Symbol, newCell: ICell): Array<ICell> {
+    const changedCells = [];
+
+    const oldCell = this.objects.get(id);
+
+    let objects: Array<Symbol>;
+
+    if (oldCell) {
+      objects = oldCell.objects ?? [];
+
+      objects = objects.filter((object) => object !== id);
+
+      oldCell.objects = objects;
+
+      changedCells.push(oldCell);
+    }
+
+    objects = newCell.objects ?? [];
+
+    objects = objects.concat(id);
+
+    newCell.objects = objects;
+
+    this.objects.set(id, newCell);
+
+    changedCells.push(newCell);
+
+    return changedCells;
   }
 }

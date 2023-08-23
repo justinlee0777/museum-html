@@ -1,22 +1,21 @@
 :root {
+  --cell-size: 100px;
   --maze-size: 5;
 }
 
-body {
-  background-color: beige;
-}
-
 .maze {
-  background-color: white;
-  display: grid;
   height: 80vh;
-  grid-template: repeat(5, 1fr) / repeat(5, 1fr);
   margin: auto;
   max-height: 90vw;
   max-width: 90vw;
+  position: relative;
   width: 80vh;
 }
 
-.has-player {
-  border: 1px solid red;
+.cell {
+  background-color: beige;
+  box-sizing: border-box;
+  height: var(--cell-size);
+  position: absolute;
+  width: var(--cell-size);
 }

@@ -1,12 +1,12 @@
-import Position from './position.interface';
+import Direction from './direction.enum';
 
 export default interface ICell {
-  position: Position;
+  id: number;
 
-  top?: ICell;
-  right?: ICell;
-  bottom?: ICell;
-  left?: ICell;
+  objects?: Array<Symbol>;
 
-  hasPlayer?: true;
+  [Direction.TOP]?: ICell;
+  [Direction.RIGHT]?: ICell;
+  [Direction.BOTTOM]?: ICell;
+  [Direction.LEFT]?: ICell;
 }

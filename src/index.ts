@@ -1,5 +1,29 @@
+import styles from './index.module.css';
+
+import ICell from './models/cell.interface';
+import Direction from './models/direction.enum';
 import RoomData from './rooms/room-data';
 import RoomUI from './rooms/room-ui';
+
+const player = Symbol('Player the user controls.');
+
+class MazeUI extends RoomUI {
+  public drawCell(
+    cell: ICell,
+    cellSize: number,
+    offset?: [number, number]
+  ): HTMLElement {
+    const element = super.drawCell(cell, cellSize, offset);
+
+    if (cell.objects?.includes(player)) {
+      element.classList.add(styles['has-player']);
+    } else {
+      element.classList.remove(styles['has-player']);
+    }
+
+    return element;
+  }
+}
 
 window.addEventListener('DOMContentLoaded', () => {
   const mazeSize = Number(
@@ -11,31 +35,37 @@ window.addEventListener('DOMContentLoaded', () => {
   const room = new RoomData({
     width: mazeSize,
     height: mazeSize,
-    player: {
-      position: [midpoint, midpoint],
-    },
+    starting: [midpoint, midpoint],
   });
 
-  const roomUI = new RoomUI();
+  room.place(player, room.start());
+
+  const roomUI = new MazeUI();
 
   const roomElement = roomUI.draw(room);
 
   document.addEventListener('keydown', (event) => {
+    let direction: Direction;
+
     switch (event.key) {
       case 'ArrowUp':
-        room.movePlayer([0, -1]);
+        direction = Direction.TOP;
         break;
       case 'ArrowRight':
-        room.movePlayer([1, 0]);
+        direction = Direction.RIGHT;
         break;
       case 'ArrowDown':
-        room.movePlayer([0, 1]);
+        direction = Direction.BOTTOM;
         break;
       case 'ArrowLeft':
-        room.movePlayer([-1, 0]);
+        direction = Direction.LEFT;
         break;
     }
-    roomUI.draw(room);
+    try {
+      const cells = room.move(player, direction);
+
+      roomUI.redraw(cells);
+    } catch {}
   });
 
   document.body.appendChild(roomElement);
