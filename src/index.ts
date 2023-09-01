@@ -1,19 +1,18 @@
 import styles from './index.module.css';
 
 import ICell from './models/cell.interface';
-import Direction from './models/direction.enum';
+import Position from './models/position.interface';
 import RoomData from './rooms/room-data';
 import RoomUI from './rooms/room-ui';
 
 const player = Symbol('Player the user controls.');
 
 class MazeUI extends RoomUI {
-  public drawCell(
-    cell: ICell,
-    cellSize: number,
-    offset?: [number, number]
-  ): HTMLElement {
-    const element = super.drawCell(cell, cellSize, offset);
+  public drawCell(cell: ICell): HTMLElement {
+    const element = super.drawCell(cell);
+
+    const [x, y] = cell.position;
+    element.textContent = `${y}, ${x}`;
 
     if (cell.objects?.includes(player)) {
       element.classList.add(styles['has-player']);
@@ -35,36 +34,39 @@ window.addEventListener('DOMContentLoaded', () => {
   const room = new RoomData({
     width: mazeSize,
     height: mazeSize,
-    starting: [midpoint, midpoint],
   });
 
-  room.place(player, room.start());
+  let playerPosition: Position = [midpoint, midpoint];
+
+  room.place(player, playerPosition);
 
   const roomUI = new MazeUI();
 
-  const roomElement = roomUI.draw(room);
+  const roomElement = roomUI.draw(room, playerPosition);
 
   document.addEventListener('keydown', (event) => {
-    let direction: Direction;
+    const newPosition: Position = [...playerPosition];
 
     switch (event.key) {
       case 'ArrowUp':
-        direction = Direction.TOP;
+        newPosition[1] -= 1;
         break;
       case 'ArrowRight':
-        direction = Direction.RIGHT;
+        newPosition[0] += 1;
         break;
       case 'ArrowDown':
-        direction = Direction.BOTTOM;
+        newPosition[1] += 1;
         break;
       case 'ArrowLeft':
-        direction = Direction.LEFT;
+        newPosition[0] -= 1;
         break;
     }
     try {
-      const cells = room.move(player, direction);
+      room.place(player, newPosition);
 
-      roomUI.redraw(cells);
+      playerPosition = newPosition;
+
+      roomUI.draw(room, playerPosition);
     } catch {}
   });
 

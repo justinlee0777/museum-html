@@ -2,96 +2,84 @@ import styles from './room-ui.module.css';
 
 import ICell from '../models/cell.interface';
 import RoomData from './room-data';
+import Position from '../models/position.interface';
+import Camera from '../models/camera.interface';
 
 export default class RoomUI {
-  public draw(data: RoomData): HTMLElement {
-    const cellSize = this.getCellSize();
+  private camera: Camera;
 
-    const mazeElement = document.createElement('div');
-    mazeElement.className = styles.maze;
+  private mazeElement: HTMLElement | undefined;
 
-    const startingCell = data.start();
+  constructor() {
+    const cameraSize = Number(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        '--camera-size'
+      )
+    );
 
-    const queue: Array<{
-      cell: ICell;
-      offset: [number, number];
-    }> = [
-      {
-        cell: startingCell,
-        offset: [0, 0],
-      },
-    ];
-    const visitedCells = new Set();
+    this.camera = [cameraSize, cameraSize];
+  }
 
-    while (queue.length > 0) {
-      const { cell, offset } = queue.pop();
-
-      if (!visitedCells.has(cell.id)) {
-        const cellElement = this.drawCell(cell, cellSize, offset);
-
-        mazeElement.appendChild(cellElement);
-
-        visitedCells.add(cell.id);
-
-        const [x, y] = offset;
-
-        const cells = [
-          { cell: cell.top, offset: [x, y - cellSize] as [number, number] },
-          { cell: cell.right, offset: [x + cellSize, y] as [number, number] },
-          { cell: cell.bottom, offset: [x, y + cellSize] as [number, number] },
-          { cell: cell.left, offset: [x - cellSize, y] as [number, number] },
-        ].filter((c) => c.cell);
-
-        queue.push(...cells);
-      }
+  public draw(data: RoomData, origin: Position): HTMLElement {
+    if (!this.mazeElement) {
+      const mazeElement = (this.mazeElement = document.createElement('div'));
+      mazeElement.className = styles.maze;
     }
+
+    const { mazeElement } = this;
+
+    const cells = data.getCells(origin, this.camera, ['center', 'center']);
+
+    const drawnCells = new Set<string>();
+
+    cells.forEach((row, j) => {
+      row.forEach((cell, i) => {
+        if (cell) {
+          const cellElement = this.drawAndPositionCell(cell, [i, j]);
+
+          drawnCells.add(this.getCellId(cell));
+
+          if (!cellElement.parentElement) {
+            mazeElement.appendChild(cellElement);
+          }
+        }
+      });
+    });
+
+    Array.from(document.querySelectorAll('[id^="cell"]'))
+      .filter((element) => !drawnCells.has(element.id))
+      .forEach((element) => element.remove());
 
     return mazeElement;
   }
 
-  public drawCell(
-    cell: ICell,
-    cellSize: number,
-    offset?: [number, number]
-  ): HTMLElement {
+  public drawCell(cell: ICell): HTMLElement {
     let cellElement = document.getElementById(this.getCellId(cell));
 
     if (!cellElement) {
       cellElement = document.createElement('div');
       cellElement.id = this.getCellId(cell);
       cellElement.classList.add(styles.cell);
-
-      const [x, y] = offset ?? [0, 0];
-
-      cellElement.style.top = `calc(50% - ${cellSize}px + ${y}px)`;
-      cellElement.style.left = `calc(50% - ${cellSize}px + ${x}px)`;
     }
 
     return cellElement;
   }
 
-  public redraw(affectedCells: Array<ICell>): void {
-    for (const cell of affectedCells) {
-      const cellId = this.getCellId(cell);
-      const element = document.getElementById(cellId);
+  private drawAndPositionCell(
+    cell: ICell,
+    offset: [number, number]
+  ): HTMLElement {
+    const cellElement = this.drawCell(cell);
 
-      if (element) {
-        this.drawCell(cell, this.getCellSize(), undefined);
-      } else {
-        throw new Error('');
-      }
-    }
-  }
+    const [x, y] = offset;
 
-  private getCellSize(): number {
-    return Number(
-      getComputedStyle(document.documentElement)
-        .getPropertyValue('--cell-size')
-        .replace(/\D+/, '')
-    );
+    cellElement.style.gridArea = `${y + 1} / ${x + 1}`;
+
+    return cellElement;
   }
 
   private getCellId(cell: ICell): string {
-    return `cell-${cell.id}`;
+    const [x, y] = cell.position;
+    return `cell-${y}-${x}`;
   }
 }

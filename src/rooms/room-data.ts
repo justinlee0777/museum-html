@@ -1,116 +1,114 @@
 import ICell from '../models/cell.interface';
-import Direction from '../models/direction.enum';
+import Dimensions from '../models/dimensions.interface';
 import Position from '../models/position.interface';
+import clamp from '../utils/clamp.function';
+
+type Cells = Array<Array<ICell | undefined>>;
 
 interface RoomConfig {
   height: number;
   width: number;
-  starting?: Position;
 }
 
-export default class RoomData {
-  private startingCell: ICell;
-  private objects: Map<Symbol, ICell>;
+type OriginPlacement = 'start' | 'center' | 'end';
 
-  constructor({ height, width, starting }: RoomConfig) {
-    let id = 0;
+type OriginType = [OriginPlacement, OriginPlacement];
+
+export default class RoomData {
+  private roomDimensions: Dimensions;
+  private cells: Cells;
+  private objects: Map<Symbol, Position>;
+
+  constructor({ height, width }: RoomConfig) {
+    this.roomDimensions = [width, height];
 
     this.objects = new Map();
 
-    const cells = Array(height)
+    this.cells = Array(height)
       .fill(undefined)
-      .map((_, y) =>
+      .map((_, j) =>
         Array(width)
           .fill(undefined)
-          .map<ICell>((_, x) => ({
-            id: id++,
+          .map<ICell>((_, i) => ({
+            position: [i, j],
           }))
       );
-
-    for (let i = 0; i < height; i++) {
-      for (let j = 0; j < width; j++) {
-        const cell = cells[i][j];
-
-        if (i > 0) {
-          cell.top = cells[i - 1][j];
-        }
-        if (j < width - 1) {
-          cell.right = cells[i][j + 1];
-        }
-        if (i < height - 1) {
-          cell.bottom = cells[i + 1][j];
-        }
-        if (j > 0) {
-          cell.left = cells[i][j - 1];
-        }
-      }
-    }
-
-    const [x, y] = starting ?? [0, 0];
-
-    this.startingCell = cells[y][x];
   }
 
-  public start(): ICell {
-    return this.startingCell;
-  }
-
-  public move(id: Symbol, direction: Direction): Array<ICell> {
-    const cell = this.objects.get(id);
-
-    if (cell) {
-      let newCell: ICell | undefined;
-
-      switch (direction) {
-        case Direction.TOP:
-          newCell = cell.top;
-          break;
-        case Direction.RIGHT:
-          newCell = cell.right;
-          break;
-        case Direction.BOTTOM:
-          newCell = cell.bottom;
-          break;
-        case Direction.LEFT:
-          newCell = cell.left;
-          break;
-      }
-
-      if (newCell) {
-        return this.place(id, newCell);
-      }
-    }
-
-    throw new Error('');
-  }
-
-  public place(id: Symbol, newCell: ICell): Array<ICell> {
+  public place(id: Symbol, newPosition: Position): Array<ICell> {
     const changedCells = [];
 
-    const oldCell = this.objects.get(id);
+    const oldPosition = this.objects.get(id);
 
     let objects: Array<Symbol>;
 
-    if (oldCell) {
-      objects = oldCell.objects ?? [];
+    const [newX, newY] = newPosition;
 
-      objects = objects.filter((object) => object !== id);
+    const newCell = this.cells[newY]?.[newX];
 
-      oldCell.objects = objects;
+    if (newCell) {
+      if (oldPosition) {
+        const [oldX, oldY] = oldPosition;
 
-      changedCells.push(oldCell);
+        const oldCell = this.cells[oldY][oldX] as ICell;
+
+        objects = oldCell.objects ?? [];
+
+        objects = objects.filter((object) => object !== id);
+
+        oldCell.objects = objects;
+
+        changedCells.push(oldCell);
+      }
+
+      objects = newCell.objects ?? [];
+
+      objects = objects.concat(id);
+
+      newCell.objects = objects;
+
+      this.objects.set(id, newPosition);
+
+      changedCells.push(newCell);
+    } else {
+      throw new Error('');
     }
 
-    objects = newCell.objects ?? [];
-
-    objects = objects.concat(id);
-
-    newCell.objects = objects;
-
-    this.objects.set(id, newCell);
-
-    changedCells.push(newCell);
-
     return changedCells;
+  }
+
+  public where(id: Symbol): Position | undefined {
+    return this.objects.get(id);
+  }
+
+  public getCells(
+    [x, y]: Position,
+    [width, height]: Dimensions,
+    [xOrigin, yOrigin]: OriginType = ['center', 'center']
+  ): Cells {
+    const [mazeWidth, mazeHeight] = this.roomDimensions;
+    const xBegin = this.getOriginPoint(x, mazeWidth, width, xOrigin);
+    const yBegin = this.getOriginPoint(y, mazeHeight, height, yOrigin);
+
+    return this.cells
+      .slice(yBegin, yBegin + height)
+      .map((row) => row.slice(xBegin, xBegin + width));
+  }
+
+  private getOriginPoint(
+    n: number,
+    length: number,
+    dimension: number,
+    placement: OriginPlacement
+  ): number {
+    switch (placement) {
+      case 'start':
+        return n;
+      case 'center':
+        const subtrahend = Math.floor(dimension / 2);
+        return clamp(n - subtrahend, 0, length - dimension);
+      case 'end':
+        return Math.max(n - dimension, 0);
+    }
   }
 }
