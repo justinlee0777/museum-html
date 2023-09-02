@@ -40,8 +40,6 @@ export default class RoomData {
 
     const oldPosition = this.objects.get(id);
 
-    let objects: Array<Symbol>;
-
     const [newX, newY] = newPosition;
 
     const newCell = this.cells[newY]?.[newX];
@@ -52,16 +50,12 @@ export default class RoomData {
 
         const oldCell = this.cells[oldY][oldX] as ICell;
 
-        objects = oldCell.objects ?? [];
-
-        objects = objects.filter((object) => object !== id);
-
-        oldCell.objects = objects;
+        this.removeObject(oldCell, id);
 
         changedCells.push(oldCell);
       }
 
-      objects = newCell.objects ?? [];
+      let objects = newCell.objects ?? [];
 
       objects = objects.concat(id);
 
@@ -93,6 +87,17 @@ export default class RoomData {
     return this.cells
       .slice(yBegin, yBegin + height)
       .map((row) => row.slice(xBegin, xBegin + width));
+  }
+
+  private removeObject(cell: ICell, object: Symbol): void {
+    let objects = cell.objects ?? [];
+    objects = objects.filter((o) => object !== o);
+
+    if (objects.length === 0) {
+      cell.objects = undefined;
+    } else {
+      cell.objects = objects;
+    }
   }
 
   private getOriginPoint(
