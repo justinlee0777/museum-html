@@ -15,11 +15,16 @@ type OriginPlacement = 'start' | 'center' | 'end';
 type OriginType = [OriginPlacement, OriginPlacement];
 
 export default class RoomData {
+  private width: number;
+  private height: number;
+
   private roomDimensions: Dimensions;
   private cells: Cells;
   private objects: Map<Symbol, Position>;
 
   constructor({ height, width }: RoomConfig) {
+    this.width = width;
+    this.height = height;
     this.roomDimensions = [width, height];
 
     this.objects = new Map();
@@ -35,7 +40,7 @@ export default class RoomData {
       );
   }
 
-  public place(id: Symbol, newPosition: Position): Array<ICell> {
+  public place(id: symbol, newPosition: Position): Array<ICell> {
     const changedCells = [];
 
     const oldPosition = this.objects.get(id);
@@ -77,12 +82,22 @@ export default class RoomData {
 
   public getCells(
     [x, y]: Position,
-    [width, height]: Dimensions,
+    dimensions?: Dimensions,
     [xOrigin, yOrigin]: OriginType = ['center', 'center']
   ): Cells {
     const [mazeWidth, mazeHeight] = this.roomDimensions;
-    const xBegin = this.getOriginPoint(x, mazeWidth, width, xOrigin);
-    const yBegin = this.getOriginPoint(y, mazeHeight, height, yOrigin);
+    let width: number, height: number, xBegin: number, yBegin: number;
+
+    if (dimensions) {
+      [width, height] = dimensions;
+      xBegin = this.getOriginPoint(x, mazeWidth, width, xOrigin);
+      yBegin = this.getOriginPoint(y, mazeHeight, height, yOrigin);
+    } else {
+      width = this.width;
+      height = this.height;
+      xBegin = 0;
+      yBegin = 0;
+    }
 
     return this.cells
       .slice(yBegin, yBegin + height)

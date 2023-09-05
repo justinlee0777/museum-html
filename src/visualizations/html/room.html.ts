@@ -1,11 +1,12 @@
-import styles from './room-ui.module.css';
+import styles from './room.html.module.css';
 
-import ICell from '../models/cell.interface';
-import RoomData from './room-data';
-import Position from '../models/position.interface';
-import Camera from '../models/camera.interface';
+import ICell from '../../models/cell.interface';
+import RoomData from '../../data/room.data';
+import Position from '../../models/position.interface';
+import Camera from '../../models/camera.interface';
+import RoomVisualization from '../models/room-visualization.model';
 
-export default class RoomUI {
+export default class HTMLRoom implements RoomVisualization<HTMLElement> {
   private camera: Camera;
 
   private mazeElement: HTMLElement | undefined;
@@ -52,6 +53,8 @@ export default class RoomUI {
 
     return mazeElement;
   }
+
+  public drawBlank(): void {}
 
   public drawCell(cell: ICell): HTMLElement {
     let cellElement = document.getElementById(this.getCellId(cell));

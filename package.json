@@ -1,7 +1,9 @@
 {
   "type": "module",
   "scripts": {
-    "start": "rm -rf dist && rollup -c && http-server -c-1 dist",
+    "build": "rm -rf dist && rollup -c",
+    "start": "npm run build && http-server -c-1 dist",
+    "generate-room:text": "npm run build && node ./dist/text/index.js",
     "format": "prettier --write ."
   },
   "devDependencies": {

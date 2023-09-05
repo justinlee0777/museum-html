@@ -1,13 +1,13 @@
 import styles from './index.module.css';
 
-import ICell from './models/cell.interface';
-import Position from './models/position.interface';
-import RoomData from './rooms/room-data';
-import RoomUI from './rooms/room-ui';
+import ICell from '../../src/models/cell.interface';
+import Position from '../../src/models/position.interface';
+import RoomData from '../../src/data/room.data';
+import HTMLRoom from '../../src/visualizations/html/room.html';
 
 const player = Symbol('Player the user controls.');
 
-class MazeUI extends RoomUI {
+class MazeUI extends HTMLRoom {
   public drawCell(cell: ICell): HTMLElement {
     const element = super.drawCell(cell);
 
