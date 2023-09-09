@@ -1,6 +1,7 @@
 import typescript from '@rollup/plugin-typescript';
 import html from '@rollup/plugin-html';
 import postcss from 'rollup-plugin-postcss';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 const htmlConfig = {
   input: {
@@ -11,6 +12,9 @@ const htmlConfig = {
     dir: 'dist',
   },
   plugins: [
+    nodeResolve({
+      moduleDirectories: ['node_modules'],
+    }),
     typescript(),
     postcss({
       modules: {

@@ -1,9 +1,12 @@
 import styles from './index.module.css';
 
+import { createKeyListener } from '@justinlee0777/components/utils/create-key-listener';
+
 import ICell from '../../src/models/cell.interface';
 import Position from '../../src/models/position.interface';
 import RoomData from '../../src/data/room.data';
 import HTMLRoom from '../../src/visualizations/html/room.html';
+import Direction from '../../src/models/direction.enum';
 
 const player = Symbol('Player the user controls.');
 
@@ -44,30 +47,27 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const roomElement = roomUI.draw(room, playerPosition);
 
-  document.addEventListener('keydown', (event) => {
-    const newPosition: Position = [...playerPosition];
+  function changePlayerPosition(change: Position): () => void {
+    return () => {
+      const newPosition = playerPosition.map(
+        (axis, i) => (axis += change[i])
+      ) as Position;
 
-    switch (event.key) {
-      case 'ArrowUp':
-        newPosition[1] -= 1;
-        break;
-      case 'ArrowRight':
-        newPosition[0] += 1;
-        break;
-      case 'ArrowDown':
-        newPosition[1] += 1;
-        break;
-      case 'ArrowLeft':
-        newPosition[0] -= 1;
-        break;
-    }
-    try {
-      room.place(player, newPosition);
+      try {
+        room.place(player, newPosition);
 
-      playerPosition = newPosition;
+        playerPosition = newPosition;
 
-      roomUI.draw(room, playerPosition);
-    } catch {}
+        roomUI.draw(room, playerPosition);
+      } catch {}
+    };
+  }
+
+  roomUI.addNavigation({
+    [Direction.TOP]: changePlayerPosition([0, -1]),
+    [Direction.RIGHT]: changePlayerPosition([1, 0]),
+    [Direction.BOTTOM]: changePlayerPosition([0, 1]),
+    [Direction.LEFT]: changePlayerPosition([-1, 0]),
   });
 
   document.body.appendChild(roomElement);

@@ -1,4 +1,5 @@
 import RoomData from '../../data/room.data';
+import NavigationInteractive from '../../interactive/navigation.interactive';
 import ICell from '../../models/cell.interface';
 import Position from '../../models/position.interface';
 import padCenter from '../../utils/pad-center.function';
@@ -91,5 +92,9 @@ export default class TextRoom implements RoomVisualization<string> {
     return Array(numColumns * (cellSize + 1) + 1)
       .fill(horizontal)
       .join('');
+  }
+
+  addNavigation(interactive: NavigationInteractive): void {
+    throw new Error('No navigation interactive allowed.');
   }
 }
