@@ -98,4 +98,8 @@ export default class TextRoom implements RoomVisualization<string> {
   addNavigation(interactive: NavigationInteractive): void {
     throw new Error('No navigation interactive allowed.');
   }
+
+  destroy(): void {
+    // Nothing to do
+  }
 }

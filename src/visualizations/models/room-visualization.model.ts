@@ -11,4 +11,6 @@ export default interface RoomVisualization<DrawResult> {
   drawBlank(position: Position): DrawResult;
 
   addNavigation(interactive: NavigationInteractive): void;
+
+  destroy(): void;
 }

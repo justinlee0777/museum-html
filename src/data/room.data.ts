@@ -110,6 +110,12 @@ export default class RoomData {
     RoomManipulator.removeCell(this.cells, position);
   }
 
+  public destroy(): void {
+    this.cells.forEach((row) => (row.length = 0));
+    this.cells.length = 0;
+    this.objects.clear();
+  }
+
   private removeObject(cell: ICell, object: Symbol): void {
     let objects = cell.objects ?? [];
     objects = objects.filter((o) => object !== o);

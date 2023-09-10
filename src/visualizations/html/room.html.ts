@@ -9,11 +9,14 @@ import Camera from '../../models/camera.interface';
 import RoomVisualization from '../models/room-visualization.model';
 import NavigationInteractive from '../../interactive/navigation.interactive';
 import Direction from '../../models/direction.enum';
+import NullaryFn from '@justinlee0777/components/types/nullary-function';
 
 export default class HTMLRoom implements RoomVisualization<HTMLElement> {
   private camera: Camera;
 
   private mazeElement: HTMLElement | undefined;
+
+  private deregisterNavigation: NullaryFn | undefined;
 
   constructor() {
     const cameraSize = Number(
@@ -103,8 +106,16 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
       ArrowDown: () => interactive[Direction.BOTTOM]?.(),
       ArrowLeft: () => interactive[Direction.LEFT]?.(),
     });
-    // TODO: Destroy?
+
     document.addEventListener('keydown', keydownListener);
+
+    this.deregisterNavigation = () =>
+      document.removeEventListener('keydown', keydownListener);
+  }
+
+  public destroy(): void {
+    this.mazeElement?.remove();
+    this.deregisterNavigation?.();
   }
 
   private drawAndPositionCell(

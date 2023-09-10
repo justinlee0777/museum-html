@@ -1,7 +1,10 @@
 import RoomData from '../../src/data/room.data';
+import DiamondRoomData from '../../src/data/variants/diamond/room.data';
 import ICell from '../../src/models/cell.interface';
 import Position from '../../src/models/position.interface';
 import TextRoom from '../../src/visualizations/text/room.text';
+
+const [roomShape] = process.argv.slice(2);
 
 const player = Symbol('Player the user controls.');
 
@@ -24,10 +27,20 @@ const mazeSize = 5;
 
 const midpoint = Math.floor(mazeSize / 2);
 
-const room = new RoomData({
-  width: mazeSize,
-  height: mazeSize,
-});
+let room: RoomData;
+
+switch (roomShape) {
+  case 'diamond':
+    room = new DiamondRoomData({
+      size: mazeSize,
+    });
+    break;
+  default:
+    room = new RoomData({
+      width: mazeSize,
+      height: mazeSize,
+    });
+}
 
 const playerPosition: Position = [midpoint, midpoint];
 
