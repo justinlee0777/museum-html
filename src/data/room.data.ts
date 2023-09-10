@@ -1,26 +1,22 @@
 import ICell from '../models/cell.interface';
+import Cells from '../models/cells.interface';
 import Dimensions from '../models/dimensions.interface';
 import Position from '../models/position.interface';
 import clamp from '../utils/clamp.function';
-
-type Cells = Array<Array<ICell | undefined>>;
-
-interface RoomConfig {
-  height: number;
-  width: number;
-}
+import RoomConfig from './room.config';
+import RoomManipulator from './room.manipulator';
 
 type OriginPlacement = 'start' | 'center' | 'end';
 
 type OriginType = [OriginPlacement, OriginPlacement];
 
 export default class RoomData {
-  private width: number;
-  private height: number;
+  protected width: number;
+  protected height: number;
 
-  private roomDimensions: Dimensions;
-  private cells: Cells;
-  private objects: Map<Symbol, Position>;
+  protected roomDimensions: Dimensions;
+  protected cells: Cells;
+  protected objects: Map<Symbol, Position>;
 
   constructor({ height, width }: RoomConfig) {
     this.width = width;
@@ -37,7 +33,9 @@ export default class RoomData {
           .map<ICell>((_, i) => ({
             position: [i, j],
           }))
-      );
+      ) as Cells;
+
+    this.cells.beginning = [0, 0];
   }
 
   public place(id: symbol, newPosition: Position): Array<ICell> {
@@ -99,9 +97,17 @@ export default class RoomData {
       yBegin = 0;
     }
 
-    return this.cells
+    const cells = this.cells
       .slice(yBegin, yBegin + height)
-      .map((row) => row.slice(xBegin, xBegin + width));
+      .map((row) => row.slice(xBegin, xBegin + width)) as Cells;
+
+    cells.beginning = [xBegin, yBegin];
+
+    return cells;
+  }
+
+  public removeCell(position: Position): void {
+    RoomManipulator.removeCell(this.cells, position);
   }
 
   private removeObject(cell: ICell, object: Symbol): void {

@@ -35,19 +35,31 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
 
     const cells = data.getCells(origin, this.camera, ['center', 'center']);
 
+    const beginningCell = cells.beginning;
+
     const drawnCells = new Set<string>();
 
     cells.forEach((row, j) => {
       row.forEach((cell, i) => {
+        const position = [
+          beginningCell[0] + i,
+          beginningCell[1] + j,
+        ] as Position;
+        const cellId = this.getCellId(position);
+
+        let cellElement: HTMLElement;
+
         if (cell) {
-          const cellElement = this.drawAndPositionCell(cell, [i, j]);
-
-          drawnCells.add(this.getCellId(cell));
-
-          if (!cellElement.parentElement) {
-            mazeElement.appendChild(cellElement);
-          }
+          cellElement = this.drawAndPositionCell(cell, [i, j]);
+        } else {
+          cellElement = this.drawAndPositionCell(position, [i, j]);
         }
+
+        if (!cellElement.parentElement) {
+          mazeElement.appendChild(cellElement);
+        }
+
+        drawnCells.add(cellId);
       });
     });
 
@@ -58,14 +70,26 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
     return mazeElement;
   }
 
-  public drawBlank(): void {}
-
-  public drawCell(cell: ICell): HTMLElement {
-    let cellElement = document.getElementById(this.getCellId(cell));
+  public drawBlank(position: Position): HTMLElement {
+    const cellId = this.getCellId(position);
+    let cellElement = document.getElementById(cellId);
 
     if (!cellElement) {
       cellElement = document.createElement('div');
-      cellElement.id = this.getCellId(cell);
+      cellElement.id = cellId;
+      cellElement.classList.add(styles.blank);
+    }
+
+    return cellElement;
+  }
+
+  public drawCell(cell: ICell): HTMLElement {
+    const cellId = this.getCellId(cell.position);
+    let cellElement = document.getElementById(cellId);
+
+    if (!cellElement) {
+      cellElement = document.createElement('div');
+      cellElement.id = cellId;
       cellElement.classList.add(styles.cell);
     }
 
@@ -84,10 +108,16 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
   }
 
   private drawAndPositionCell(
-    cell: ICell,
+    cellOrPosition: ICell | Position,
     offset: [number, number]
   ): HTMLElement {
-    const cellElement = this.drawCell(cell);
+    let cellElement: HTMLElement;
+
+    if ('position' in cellOrPosition) {
+      cellElement = this.drawCell(cellOrPosition);
+    } else {
+      cellElement = this.drawBlank(cellOrPosition);
+    }
 
     const [x, y] = offset;
 
@@ -96,8 +126,8 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
     return cellElement;
   }
 
-  private getCellId(cell: ICell): string {
-    const [x, y] = cell.position;
+  private getCellId(position: Position): string {
+    const [x, y] = position;
     return `cell-${y}-${x}`;
   }
 }

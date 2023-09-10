@@ -8,5 +8,7 @@ export default interface RoomVisualization<DrawResult> {
 
   drawCell(cell: ICell): DrawResult;
 
+  drawBlank(position: Position): DrawResult;
+
   addNavigation(interactive: NavigationInteractive): void;
 }

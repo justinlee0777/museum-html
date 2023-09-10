@@ -18,7 +18,15 @@
   width: 80vh;
 }
 
+.cell,
+.blank {
+  box-sizing: border-box;
+}
+
 .cell {
   background-color: beige;
-  box-sizing: border-box;
+}
+
+.blank {
+  background-color: black;
 }

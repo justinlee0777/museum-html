@@ -45,53 +45,54 @@ export default class TextRoom implements RoomVisualization<string> {
 
   draw(data: RoomData, origin: Position): string {
     const cells = data.getCells(origin);
-    const numColumns = cells.length;
+    const beginningCell = cells.beginning;
 
     const {
+      cellWidth,
       graph: {
-        edges: { vertical },
+        edges: { horizontal, vertical },
       },
     } = this;
 
-    const top = this.drawTop(numColumns);
-
     let result = '';
-    cells.forEach((row) => {
-      result += `${top}\n`;
+    cells.forEach((row, j) => {
+      let rowText = '';
+      let verticalText = '';
 
-      row.forEach((cell) => {
+      row.forEach((cell, i) => {
+        const position = [
+          beginningCell[0] + i,
+          beginningCell[1] + j,
+        ] as Position;
+
         if (cell) {
           const cellText = this.drawCell(cell);
-          result += `${vertical}${cellText}`;
+          rowText += `${vertical}${cellText}${vertical}`;
+          verticalText += Array(cellWidth + 2)
+            .fill(horizontal)
+            .join('');
+        } else {
+          const blankText = this.drawBlank(position);
+          rowText += ` ${blankText} `;
+          verticalText += Array(cellWidth + 2)
+            .fill(' ')
+            .join('');
         }
       });
-      result += `${vertical}\n`;
+      result += `${verticalText}\n${rowText}\n${verticalText}\n`;
     });
-    result += top;
 
     return result;
   }
 
   drawCell(cell: ICell): string {
-    const { cellWidth: cellSize } = this;
-    return padCenter('', this.cellWidth, ' ');
+    const { cellWidth } = this;
+    return padCenter('', cellWidth, ' ');
   }
 
-  private drawTop(numColumns: number): string {
-    const {
-      cellWidth: cellSize,
-      graph: {
-        edges: { horizontal },
-      },
-    } = this;
-    /*
-     * <number of edges> = <number of columns> + 1
-     * (<number of columns> * <cell size>) + <number of edges>
-     * reduces to (<number of columns * (<cell size> + 1)) + 1
-     */
-    return Array(numColumns * (cellSize + 1) + 1)
-      .fill(horizontal)
-      .join('');
+  drawBlank(position: Position): string {
+    const { cellWidth } = this;
+    return padCenter('', cellWidth, ' ');
   }
 
   addNavigation(interactive: NavigationInteractive): void {
