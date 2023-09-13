@@ -20,6 +20,6 @@
     "typescript-plugin-css-modules": "^5.0.1"
   },
   "dependencies": {
-    "@justinlee0777/components": "^0.0.1-alpha.0"
+    "@justinlee0777/components": "^0.0.1-alpha.5"
   }
 }

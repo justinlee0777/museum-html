@@ -12,23 +12,13 @@ import Direction from '../../models/direction.enum';
 import NullaryFn from '@justinlee0777/components/types/nullary-function';
 
 export default class HTMLRoom implements RoomVisualization<HTMLElement> {
-  private camera: Camera;
-
   private mazeElement: HTMLElement | undefined;
 
   private deregisterNavigation: NullaryFn | undefined;
 
-  constructor() {
-    const cameraSize = Number(
-      getComputedStyle(document.documentElement).getPropertyValue(
-        '--camera-size'
-      )
-    );
+  constructor(private cellSize: number) {}
 
-    this.camera = [cameraSize, cameraSize];
-  }
-
-  public draw(data: RoomData, origin: Position): HTMLElement {
+  public draw(data: RoomData, origin: Position, camera: Camera): HTMLElement {
     if (!this.mazeElement) {
       const mazeElement = (this.mazeElement = document.createElement('div'));
       mazeElement.className = styles.maze;
@@ -36,7 +26,9 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
 
     const { mazeElement } = this;
 
-    const cells = data.getCells(origin, this.camera, ['center', 'center']);
+    mazeElement.style.gridTemplate = `repeat(${camera[0]}, ${this.cellSize}px) / repeat(${camera[1]}, ${this.cellSize}px)`;
+
+    const cells = data.getCells(origin, camera, ['center', 'center']);
 
     const beginningCell = cells.beginning;
 

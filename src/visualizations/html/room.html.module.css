@@ -1,15 +1,5 @@
-:root {
-  --camera-size: 5;
-  --cell-size: 100px;
-  --maze-size: 10;
-}
-
 .maze {
   display: grid;
-  grid-template: repeat(var(--camera-size), var(--cell-size)) / repeat(
-      var(--camera-size),
-      var(--cell-size)
-    );
   height: 80vh;
   margin: auto;
   max-height: 90vw;
@@ -25,6 +15,7 @@
 
 .cell {
   background-color: beige;
+  position: relative;
 }
 
 .blank {
