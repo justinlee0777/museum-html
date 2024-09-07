@@ -6,12 +6,12 @@ import Position from '../models/position.interface';
 import clamp from '../utils/clamp.function';
 import RoomConfig from './room.config';
 
-export default class RoomData {
+export default class RoomData<CellData = void> {
   protected width: number;
   protected height: number;
 
   protected roomDimensions: Dimensions;
-  protected cells: Array<Array<ICell | undefined>>;
+  protected cells: Array<Array<ICell<CellData> | undefined>>;
   public beginning: Position;
   protected objects: Map<Symbol, Position>;
 
@@ -27,7 +27,7 @@ export default class RoomData {
       .map((_, j) =>
         Array(width)
           .fill(undefined)
-          .map<ICell>((_, i) => ({
+          .map((_, i) => ({
             position: [i, j],
           }))
       );
@@ -35,7 +35,7 @@ export default class RoomData {
     this.beginning = [0, 0];
   }
 
-  public place(id: symbol, newPosition: Position): Array<ICell> {
+  public place(id: symbol, newPosition: Position): Array<ICell<CellData>> {
     const changedCells = [];
 
     const oldPosition = this.objects.get(id);
@@ -48,7 +48,7 @@ export default class RoomData {
       if (oldPosition) {
         const [oldX, oldY] = oldPosition;
 
-        const oldCell = this.cells[oldY][oldX] as ICell;
+        const oldCell = this.cells[oldY][oldX] as ICell<CellData>;
 
         this.removeObject(oldCell, id);
 
@@ -79,7 +79,7 @@ export default class RoomData {
     [x, y]: Position,
     dimensions?: Dimensions,
     [xOrigin, yOrigin]: OriginType = ['center', 'center']
-  ): Array<Array<ICell | undefined>> {
+  ): Array<Array<ICell<CellData> | undefined>> {
     const [mazeWidth, mazeHeight] = this.roomDimensions;
     let width: number, height: number, xBegin: number, yBegin: number;
 
@@ -115,7 +115,7 @@ export default class RoomData {
     this.objects.clear();
   }
 
-  private removeObject(cell: ICell, object: Symbol): void {
+  private removeObject(cell: ICell<CellData>, object: Symbol): void {
     let objects = cell.objects ?? [];
     objects = objects.filter((o) => object !== o);
 
