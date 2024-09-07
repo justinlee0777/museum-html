@@ -28,7 +28,7 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
 
     mazeElement.style.gridTemplate = `repeat(${camera[0]}, ${this.cellSize}px) / repeat(${camera[1]}, ${this.cellSize}px)`;
 
-    const cells = data.getCells(origin, camera, ['center', 'center']);
+    const cells = data.getSubset(origin, camera, ['center', 'center']);
 
     const beginningCell = data.beginning;
 

@@ -44,7 +44,7 @@ export default class TextRoom implements RoomVisualization<string> {
   }
 
   draw(data: RoomData, origin: Position): string {
-    const cells = data.getCells(origin);
+    const cells = data.getSubset(origin);
     const beginningCell = data.beginning;
 
     const {

@@ -75,7 +75,7 @@ export default class RoomData {
     return this.objects.get(id);
   }
 
-  public getCells(
+  public getSubset(
     [x, y]: Position,
     dimensions?: Dimensions,
     [xOrigin, yOrigin]: OriginType = ['center', 'center']
