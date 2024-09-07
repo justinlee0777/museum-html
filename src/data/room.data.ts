@@ -1,21 +1,18 @@
 import ICell from '../models/cell.interface';
-import Cells from '../models/cells.interface';
 import Dimensions from '../models/dimensions.interface';
+import OriginPlacement from '../models/origin-placement.model';
+import OriginType from '../models/origin-type.model';
 import Position from '../models/position.interface';
 import clamp from '../utils/clamp.function';
 import RoomConfig from './room.config';
-import RoomManipulator from './room.manipulator';
-
-type OriginPlacement = 'start' | 'center' | 'end';
-
-type OriginType = [OriginPlacement, OriginPlacement];
 
 export default class RoomData {
   protected width: number;
   protected height: number;
 
   protected roomDimensions: Dimensions;
-  protected cells: Cells;
+  protected cells: Array<Array<ICell | undefined>>;
+  public beginning: Position;
   protected objects: Map<Symbol, Position>;
 
   constructor({ height, width }: RoomConfig) {
@@ -33,9 +30,9 @@ export default class RoomData {
           .map<ICell>((_, i) => ({
             position: [i, j],
           }))
-      ) as Cells;
+      );
 
-    this.cells.beginning = [0, 0];
+    this.beginning = [0, 0];
   }
 
   public place(id: symbol, newPosition: Position): Array<ICell> {
@@ -82,7 +79,7 @@ export default class RoomData {
     [x, y]: Position,
     dimensions?: Dimensions,
     [xOrigin, yOrigin]: OriginType = ['center', 'center']
-  ): Cells {
+  ): Array<Array<ICell | undefined>> {
     const [mazeWidth, mazeHeight] = this.roomDimensions;
     let width: number, height: number, xBegin: number, yBegin: number;
 
@@ -99,15 +96,17 @@ export default class RoomData {
 
     const cells = this.cells
       .slice(yBegin, yBegin + height)
-      .map((row) => row.slice(xBegin, xBegin + width)) as Cells;
+      .map((row) => row.slice(xBegin, xBegin + width));
 
-    cells.beginning = [xBegin, yBegin];
+    this.beginning = [xBegin, yBegin];
 
     return cells;
   }
 
   public removeCell(position: Position): void {
-    RoomManipulator.removeCell(this.cells, position);
+    const [x, y] = position;
+
+    this.cells[y][x] = undefined;
   }
 
   public destroy(): void {

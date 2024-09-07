@@ -30,7 +30,7 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
 
     const cells = data.getCells(origin, camera, ['center', 'center']);
 
-    const beginningCell = cells.beginning;
+    const beginningCell = data.beginning;
 
     const drawnCells = new Set<string>();
 
