@@ -4,10 +4,10 @@ import Camera from '../../models/camera.interface';
 import ICell from '../../models/cell.interface';
 import Position from '../../models/position.interface';
 
-export default interface RoomVisualization<DrawResult> {
-  draw(data: RoomData, origin: Position, camera: Camera): DrawResult;
+export default interface RoomVisualization<DrawResult, CellData = void> {
+  draw(data: RoomData<CellData>, origin: Position, camera: Camera): DrawResult;
 
-  drawCell(cell: ICell): DrawResult;
+  drawCell(cell: ICell<CellData>): DrawResult;
 
   drawBlank(position: Position): DrawResult;
 

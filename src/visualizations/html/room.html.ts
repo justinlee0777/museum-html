@@ -11,14 +11,20 @@ import NavigationInteractive from '../../interactive/navigation.interactive';
 import Direction from '../../models/direction.enum';
 import NullaryFn from '@justinlee0777/components/types/nullary-function';
 
-export default class HTMLRoom implements RoomVisualization<HTMLElement> {
+export default class HTMLRoom<CellData = void>
+  implements RoomVisualization<HTMLElement, CellData>
+{
   private mazeElement: HTMLElement | undefined;
 
   private deregisterNavigation: NullaryFn | undefined;
 
   constructor(private cellSize: number) {}
 
-  public draw(data: RoomData, origin: Position, camera: Camera): HTMLElement {
+  public draw(
+    data: RoomData<CellData>,
+    origin: Position,
+    camera: Camera
+  ): HTMLElement {
     if (!this.mazeElement) {
       const mazeElement = (this.mazeElement = document.createElement('div'));
       mazeElement.className = styles.maze;
@@ -78,7 +84,7 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
     return cellElement;
   }
 
-  public drawCell(cell: ICell): HTMLElement {
+  public drawCell(cell: ICell<CellData>): HTMLElement {
     const cellId = this.getCellId(cell.position);
     let cellElement = document.getElementById(cellId);
 
@@ -111,7 +117,7 @@ export default class HTMLRoom implements RoomVisualization<HTMLElement> {
   }
 
   private drawAndPositionCell(
-    cellOrPosition: ICell | Position,
+    cellOrPosition: ICell<CellData> | Position,
     offset: [number, number]
   ): HTMLElement {
     let cellElement: HTMLElement;

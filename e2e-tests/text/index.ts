@@ -6,13 +6,15 @@ import TextRoom from '../../src/visualizations/text/room.text';
 
 const [roomShape] = process.argv.slice(2);
 
-const player = Symbol('Player the user controls.');
+interface CellData {
+  hasPlayer?: boolean;
+}
 
-class CustomTextRoom extends TextRoom {
-  drawCell(cell: ICell): string {
+class CustomTextRoom extends TextRoom<CellData> {
+  drawCell(cell: ICell<CellData>): string {
     let text = super.drawCell(cell);
 
-    if (cell.objects?.includes(player)) {
+    if (cell.data?.hasPlayer) {
       const { length } = text;
       const midpoint = Math.floor(length / 2);
 
@@ -27,16 +29,16 @@ const mazeSize = 5;
 
 const midpoint = Math.floor(mazeSize / 2);
 
-let room: RoomData;
+let room: RoomData<CellData>;
 
 switch (roomShape) {
   case 'diamond':
-    room = new DiamondRoomData({
+    room = new DiamondRoomData<CellData>({
       size: mazeSize,
     });
     break;
   default:
-    room = new RoomData({
+    room = new RoomData<CellData>({
       width: mazeSize,
       height: mazeSize,
     });
@@ -44,7 +46,7 @@ switch (roomShape) {
 
 const playerPosition: Position = [midpoint, midpoint];
 
-room.place(player, playerPosition);
+room.updateCell(playerPosition, { hasPlayer: true });
 
 const textRoom = new CustomTextRoom();
 

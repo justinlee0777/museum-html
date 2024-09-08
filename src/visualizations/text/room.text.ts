@@ -17,7 +17,9 @@ interface TextRoomConfig {
   cellMapOverride?: Partial<Graph>;
 }
 
-export default class TextRoom implements RoomVisualization<string> {
+export default class TextRoom<CellData = void>
+  implements RoomVisualization<string, CellData>
+{
   private cellWidth: number;
   private graph: Graph = {
     edges: {
@@ -43,7 +45,7 @@ export default class TextRoom implements RoomVisualization<string> {
     }
   }
 
-  draw(data: RoomData, origin: Position): string {
+  draw(data: RoomData<CellData>, origin: Position): string {
     const cells = data.getSubset(origin);
     const beginningCell = data.beginning;
 
@@ -85,7 +87,7 @@ export default class TextRoom implements RoomVisualization<string> {
     return result;
   }
 
-  drawCell(cell: ICell): string {
+  drawCell(cell: ICell<CellData>): string {
     const { cellWidth } = this;
     return padCenter('', cellWidth, ' ');
   }

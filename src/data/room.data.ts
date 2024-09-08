@@ -4,6 +4,7 @@ import OriginPlacement from '../models/origin-placement.model';
 import OriginType from '../models/origin-type.model';
 import Position from '../models/position.interface';
 import clamp from '../utils/clamp.function';
+import RoomDataModel from './room-data-model.interface';
 import RoomConfig from './room.config';
 
 export default class RoomData<CellData = void> {
@@ -13,14 +14,11 @@ export default class RoomData<CellData = void> {
   protected roomDimensions: Dimensions;
   protected cells: Array<Array<ICell<CellData> | undefined>>;
   public beginning: Position;
-  protected objects: Map<Symbol, Position>;
 
   constructor({ height, width }: RoomConfig) {
     this.width = width;
     this.height = height;
     this.roomDimensions = [width, height];
-
-    this.objects = new Map();
 
     this.cells = Array(height)
       .fill(undefined)
@@ -33,46 +31,6 @@ export default class RoomData<CellData = void> {
       );
 
     this.beginning = [0, 0];
-  }
-
-  public place(id: symbol, newPosition: Position): Array<ICell<CellData>> {
-    const changedCells = [];
-
-    const oldPosition = this.objects.get(id);
-
-    const [newX, newY] = newPosition;
-
-    const newCell = this.cells[newY]?.[newX];
-
-    if (newCell) {
-      if (oldPosition) {
-        const [oldX, oldY] = oldPosition;
-
-        const oldCell = this.cells[oldY][oldX] as ICell<CellData>;
-
-        this.removeObject(oldCell, id);
-
-        changedCells.push(oldCell);
-      }
-
-      let objects = newCell.objects ?? [];
-
-      objects = objects.concat(id);
-
-      newCell.objects = objects;
-
-      this.objects.set(id, newPosition);
-
-      changedCells.push(newCell);
-    } else {
-      throw new Error('');
-    }
-
-    return changedCells;
-  }
-
-  public where(id: Symbol): Position | undefined {
-    return this.objects.get(id);
   }
 
   public getSubset(
@@ -103,6 +61,10 @@ export default class RoomData<CellData = void> {
     return cells;
   }
 
+  public updateCell([x, y]: Position, cellData: CellData): void {
+    this.cells[y][x]!.data = cellData;
+  }
+
   public removeCell(position: Position): void {
     const [x, y] = position;
 
@@ -112,19 +74,13 @@ export default class RoomData<CellData = void> {
   public destroy(): void {
     this.cells.forEach((row) => (row.length = 0));
     this.cells.length = 0;
-    this.objects.clear();
   }
 
-  private removeObject(cell: ICell<CellData>, object: Symbol): void {
-    let objects = cell.objects ?? [];
-    objects = objects.filter((o) => object !== o);
+  /*
+  toJSON(): RoomDataModel {
 
-    if (objects.length === 0) {
-      cell.objects = undefined;
-    } else {
-      cell.objects = objects;
-    }
   }
+  */
 
   private getOriginPoint(
     n: number,

@@ -2,7 +2,9 @@ import RoomData from '../../room.data';
 import RoomConfig from './room.config';
 import BaseRoomConfig from '../../room.config';
 
-export default class DiamondRoomData extends RoomData {
+export default class DiamondRoomData<
+  CellData = void
+> extends RoomData<CellData> {
   constructor(config: RoomConfig) {
     const { size } = config;
     const baseConfig: BaseRoomConfig = {

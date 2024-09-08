@@ -16,18 +16,20 @@ import DiamondRoomData from '../../src/data/variants/diamond/room.data';
 import Camera from '../../src/models/camera.interface';
 import paintPlayer from './paint-player.function';
 
-const player = Symbol('Player the user controls.');
-
 const cellSizeInPixels = 100;
 
-class MazeUI extends HTMLRoom {
-  public drawCell(cell: ICell): HTMLElement {
+interface CellData {
+  hasPlayer: boolean;
+}
+
+class MazeUI extends HTMLRoom<CellData> {
+  public drawCell(cell: ICell<CellData>): HTMLElement {
     const element = super.drawCell(cell);
 
     const [x, y] = cell.position;
     element.textContent = `${y}, ${x}`;
 
-    if (cell.objects?.includes(player)) {
+    if (cell.data?.hasPlayer) {
       const playerElement = paintPlayer(cellSizeInPixels);
 
       playerElement.classList.add(styles.player);
@@ -44,7 +46,7 @@ class MazeUI extends HTMLRoom {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  let room: RoomData;
+  let room: RoomData<CellData>;
   let roomUI: MazeUI;
 
   let currentValue = 'square';
@@ -81,7 +83,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     let playerPosition: Position = [midpoint, midpoint];
 
-    room.place(player, playerPosition);
+    room.updateCell(playerPosition, { hasPlayer: true });
 
     roomUI = new MazeUI(cellSizeInPixels);
 
@@ -100,7 +102,8 @@ window.addEventListener('DOMContentLoaded', () => {
       if (change[1] === -1) bound = 'bottom';
 
       try {
-        room.place(player, newPosition);
+        room.updateCell(playerPosition, { hasPlayer: false });
+        room.updateCell(newPosition, { hasPlayer: true });
 
         playerPosition = newPosition;
 
