@@ -8,16 +8,12 @@
   width: 80vh;
 }
 
-.cell,
-.blank {
-  box-sizing: border-box;
-}
-
 .cell {
-  background-color: beige;
   position: relative;
 }
 
-.blank {
-  background-color: black;
+.spriteHolder {
+  left: 0;
+  position: absolute;
+  top: 0;
 }

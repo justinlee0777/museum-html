@@ -2,20 +2,24 @@ import typescript from '@rollup/plugin-typescript';
 import html from '@rollup/plugin-html';
 import postcss from 'rollup-plugin-postcss';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import image from '@rollup/plugin-image';
+
+const dir = 'dist';
 
 const htmlConfig = {
   input: {
-    'html/index': 'e2e-tests/html/index.ts',
+    'html/index': 'index.ts',
   },
   output: {
     sourcemap: true,
-    dir: 'dist',
+    dir,
   },
   plugins: [
     nodeResolve({
       moduleDirectories: ['node_modules'],
     }),
     typescript(),
+    image(),
     postcss({
       modules: {
         generateScopedName: 'room__[local]',
@@ -27,15 +31,4 @@ const htmlConfig = {
   ],
 };
 
-const textConfig = {
-  input: {
-    'text/index': 'e2e-tests/text/index.ts',
-  },
-  output: {
-    sourcemap: true,
-    dir: 'dist',
-  },
-  plugins: [typescript()],
-};
-
-export default [htmlConfig, textConfig];
+export default [htmlConfig];
