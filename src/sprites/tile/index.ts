@@ -1,4 +1,4 @@
-import TileSprite from '../../assets/tile.png';
+import TileSpriteImage from '../../assets/tile.png';
 
 import SPRITE_SIZE from '../../consts/sprite-size.const';
 import MuseumArgs from '../../models/museum-args.model';
@@ -6,34 +6,42 @@ import styles from './index.module.css';
 
 type Args = Pick<MuseumArgs, 'cellSize'>;
 
-export default function drawTileSprite({ cellSize }: Args): HTMLCanvasElement {
-  const sprite = document.createElement('canvas');
+export default class TileSprite {
+  sprite: HTMLCanvasElement | undefined;
 
-  sprite.className = styles.tileSprite;
+  constructor(private args: Args) {}
 
-  sprite.width = cellSize;
-  sprite.height = cellSize;
+  draw(): void {
+    const { cellSize } = this.args;
 
-  const image = new Image();
+    const sprite = document.createElement('canvas');
 
-  image.onload = () => {
-    const context = sprite.getContext('2d')!;
-    context.imageSmoothingEnabled = false;
+    sprite.className = styles.tileSprite;
 
-    context.drawImage(
-      image,
-      0,
-      0,
-      SPRITE_SIZE,
-      SPRITE_SIZE,
-      0,
-      0,
-      cellSize,
-      cellSize
-    );
-  };
+    sprite.width = cellSize;
+    sprite.height = cellSize;
 
-  image.src = TileSprite;
+    const image = new Image();
 
-  return sprite;
+    image.onload = () => {
+      const context = sprite.getContext('2d')!;
+      context.imageSmoothingEnabled = false;
+
+      context.drawImage(
+        image,
+        0,
+        0,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+        0,
+        0,
+        cellSize,
+        cellSize
+      );
+    };
+
+    image.src = TileSpriteImage;
+
+    this.sprite = sprite;
+  }
 }

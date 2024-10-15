@@ -1,3 +1,4 @@
 .playerSprite {
   image-rendering: pixelated;
+  z-index: 100;
 }

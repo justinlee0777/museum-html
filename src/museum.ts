@@ -3,17 +3,20 @@ import styles from './museum.module.css';
 import Cell from './models/cell.model';
 import Position from './models/position.model';
 import MuseumArgs from './models/museum-args.model';
-import drawPlayerSprite, {
+import TileSprite from './sprites/tile';
+import PlayerSprite, {
   SpritePosture as PlayerSpritePosture,
 } from './sprites/player';
-import drawTileSprite from './sprites/tile';
+import ANIMATION_RATE from './consts/animate-rate.const';
 
 export default class Museum {
   private cells: Array<Array<Cell>>;
 
   private playerPosition: Position;
 
-  private playerSprite: HTMLElement;
+  private playerSpriteElement: HTMLElement;
+
+  private playerSprite: PlayerSprite;
 
   private museumElement: HTMLElement | undefined;
 
@@ -32,15 +35,17 @@ export default class Museum {
 
     this.playerPosition = playerPosition;
 
-    const playerSprite = (this.playerSprite = document.createElement('div'));
-    playerSprite.className = styles.spriteHolder;
+    const playerSpriteElement = (this.playerSpriteElement =
+      document.createElement('div'));
+    playerSpriteElement.className = styles.spriteHolder;
 
-    playerSprite.appendChild(
-      drawPlayerSprite({
-        cellSize,
-        posture: PlayerSpritePosture.DOWN_STANDING,
-      })
-    );
+    const playerSprite = (this.playerSprite = new PlayerSprite({
+      cellSize,
+    }));
+
+    playerSprite.draw(PlayerSpritePosture.DOWN_STANDING);
+
+    playerSpriteElement.appendChild(playerSprite.sprite!);
   }
 
   draw(): HTMLElement {
@@ -58,33 +63,89 @@ export default class Museum {
       });
     });
 
+    mazeElement.appendChild(this.playerSpriteElement);
+
     this.drawPlayer();
 
     return mazeElement;
   }
 
   addKeyListeners(): void {
-    document.body.addEventListener('keyup', (event) => {
-      const { playerPosition } = this;
+    const pressedKeys: Set<String> = new Set();
+    const keyPrecedence = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
 
-      this.removePlayer();
+    let updatePlayerLock = false;
 
-      switch (event.key) {
-        case 'ArrowUp':
-          this.updatePlayer([playerPosition[0] - 1, playerPosition[1]]);
-          break;
-        case 'ArrowRight':
-          this.updatePlayer([playerPosition[0], playerPosition[1] + 1]);
-          break;
-        case 'ArrowDown':
-          this.updatePlayer([playerPosition[0] + 1, playerPosition[1]]);
-          break;
-        case 'ArrowLeft':
-          this.updatePlayer([playerPosition[0], playerPosition[1] - 1]);
-          break;
+    const updatePlayer = async () => {
+      if (updatePlayerLock) {
+        return;
       }
 
-      this.drawPlayer();
+      for (const key of keyPrecedence) {
+        if (pressedKeys.has(key)) {
+          const { playerPosition } = this;
+          const [y, x] = playerPosition;
+
+          let animation: () => Promise<void>, newPosition: Position;
+
+          switch (key) {
+            case 'ArrowUp':
+              animation = () => this.playerSprite.drawWalkingUp();
+              newPosition = [y - 1, x];
+              break;
+            case 'ArrowRight':
+              animation = () => this.playerSprite.drawWalkingRight();
+              newPosition = [y, x + 1];
+              break;
+            case 'ArrowDown':
+              animation = () => this.playerSprite.drawWalkingDown();
+              newPosition = [y + 1, x];
+              break;
+            case 'ArrowLeft':
+              animation = () => this.playerSprite.drawWalkingLeft();
+              newPosition = [y, x - 1];
+              break;
+            default:
+              return;
+          }
+
+          if (this.canUpdatePlayer(newPosition)) {
+            updatePlayerLock = true;
+
+            try {
+              const [newTop, newLeft] = this.getTopLeftValues(newPosition);
+              await Promise.all([
+                animation(),
+                this.playerSpriteElement.animate(
+                  [{ top: newTop, left: newLeft }],
+                  ANIMATION_RATE
+                ),
+              ]);
+
+              this.updatePlayer(newPosition);
+
+              this.drawPlayer();
+
+              await new Promise((resolve) => setTimeout(resolve, 1000 / 60));
+            } catch (error) {
+              console.log('error updating player', error);
+            } finally {
+              updatePlayerLock = false;
+            }
+            return;
+          }
+        }
+      }
+    };
+
+    document.body.addEventListener('keydown', (event) => {
+      pressedKeys.add(event.key);
+      updatePlayer();
+    });
+
+    document.addEventListener('keyup', (event) => {
+      pressedKeys.delete(event.key);
+      updatePlayer();
     });
   }
 
@@ -99,9 +160,10 @@ export default class Museum {
     const cellHolder = document.createElement('div');
     cellHolder.className = styles.spriteHolder;
 
-    const tileSprite = drawTileSprite({ cellSize: this.args.cellSize });
+    const tileSprite = new TileSprite({ cellSize: this.args.cellSize });
+    tileSprite.draw();
 
-    cellHolder.appendChild(tileSprite);
+    cellHolder.appendChild(tileSprite.sprite!);
 
     cellElement.appendChild(cellHolder);
 
@@ -113,15 +175,20 @@ export default class Museum {
     return `cell-${y}-${x}`;
   }
 
-  private updatePlayer(newPosition: Position) {
-    const { playerPosition } = this;
+  private canUpdatePlayer(newPosition: Position): boolean {
     const { height, width } = this.args;
 
-    if (
-      !newPosition.every((pos) => pos >= 0) ||
-      newPosition[0] >= height ||
-      newPosition[1] >= width
-    ) {
+    return (
+      newPosition.every((pos) => pos >= 0) &&
+      newPosition[0] < height &&
+      newPosition[1] < width
+    );
+  }
+
+  private updatePlayer(newPosition: Position) {
+    const { playerPosition } = this;
+
+    if (!this.canUpdatePlayer(newPosition)) {
       return;
     }
 
@@ -134,27 +201,17 @@ export default class Museum {
     };
   }
 
-  private removePlayer() {
-    const { museumElement } = this;
+  private getTopLeftValues(position: Position): [string, string] {
+    const { cellSize } = this.args;
+    const [y, x] = position;
 
-    if (!museumElement) {
-      return;
-    }
-
-    this.playerSprite.remove();
+    return [`${cellSize * y}px`, `${cellSize * x}px`];
   }
 
   private drawPlayer() {
-    const { museumElement } = this;
+    const [top, left] = this.getTopLeftValues(this.playerPosition);
 
-    if (!museumElement) {
-      return;
-    }
-
-    const cellId = this.getCellId(this.playerPosition);
-
-    const cellElement = museumElement.querySelector(`#${cellId}`)!;
-
-    cellElement.appendChild(this.playerSprite);
+    this.playerSpriteElement.style.top = top;
+    this.playerSpriteElement.style.left = left;
   }
 }
