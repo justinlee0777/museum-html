@@ -12,7 +12,13 @@
   position: relative;
 }
 
-.spriteHolder {
+.player {
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+
+.layer {
   left: 0;
   position: absolute;
   top: 0;

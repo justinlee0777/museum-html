@@ -3,41 +3,73 @@ import styles from './museum.module.css';
 import Cell from './models/cell.model';
 import Position from './models/position.model';
 import MuseumArgs from './models/museum-args.model';
-import TileSprite from './sprites/tile';
 import PlayerSprite, {
   SpritePosture as PlayerSpritePosture,
 } from './sprites/player';
 import ANIMATION_RATE from './consts/animate-rate.const';
+import MuseumObject from './models/museum-object.model';
+import TileLayer from './layers/tile.layer';
+import ObjectLayer from './layers/object.layer';
+import WallLayer from './layers/wall.layer';
 
 export default class Museum {
   private cells: Array<Array<Cell>>;
 
-  private playerPosition: Position;
+  private wallPositions: Set<string>;
 
-  private playerSpriteElement: HTMLElement;
+  private playerPosition: Position;
 
   private playerSprite: PlayerSprite;
 
   private museumElement: HTMLElement | undefined;
 
   constructor(public args: MuseumArgs) {
-    const { height, width, cellSize, playerPosition } = args;
+    const { height, width, cellSize, playerPosition, objects, walls } = args;
 
     this.cells = Array(height)
       .fill(undefined)
       .map((_, j) =>
         Array(width)
           .fill(undefined)
-          .map((_, i) => ({
-            position: [i, j],
-          }))
+          .map((_, i) => {
+            const position = [i, j] as Position;
+            const object = objects.find((object) =>
+              this.isObjectInCell(position, object)
+            );
+
+            const cell: Cell = {
+              position: [i, j],
+              data: {
+                object,
+              },
+            };
+
+            return cell;
+          })
       );
 
-    this.playerPosition = playerPosition;
+    const wallPositions = (this.wallPositions = new Set());
+    for (const wall of walls) {
+      const {
+        origin: [ox, oy],
+      } = wall;
+      let range: Array<Position>;
+      if ('height' in wall) {
+        range = Array(wall.height)
+          .fill(undefined)
+          .map((_, i) => [ox, oy + i]);
+      } else {
+        range = Array(wall.width)
+          .fill(undefined)
+          .map((_, i) => [ox + i, oy]);
+      }
 
-    const playerSpriteElement = (this.playerSpriteElement =
-      document.createElement('div'));
-    playerSpriteElement.className = styles.spriteHolder;
+      for (const position of range) {
+        wallPositions.add(this.getWallKey(position));
+      }
+    }
+
+    this.playerPosition = playerPosition;
 
     const playerSprite = (this.playerSprite = new PlayerSprite({
       cellSize,
@@ -45,25 +77,45 @@ export default class Museum {
 
     playerSprite.draw(PlayerSpritePosture.DOWN_STANDING);
 
-    playerSpriteElement.appendChild(playerSprite.sprite!);
+    playerSprite.sprite!.className = styles.player;
   }
 
   draw(): HTMLElement {
-    const { height, width, cellSize } = this.args;
+    const { cells } = this;
+    const { height, width, cellSize, objects, walls } = this.args;
 
     const mazeElement = (this.museumElement = document.createElement('div'));
     mazeElement.className = styles.maze;
     mazeElement.style.gridTemplate = `repeat(${height}, ${cellSize}px) / repeat(${width}, ${cellSize}px)`;
 
-    this.cells.forEach((row, j) => {
-      row.forEach((_, i) => {
-        const cellElement = this.drawCell([i, j]);
+    const tileLayer = new TileLayer({ cellSize }, cells);
 
-        mazeElement.appendChild(cellElement);
-      });
-    });
+    tileLayer.draw();
 
-    mazeElement.appendChild(this.playerSpriteElement);
+    const tileLayerSprite = tileLayer.sprite!;
+    tileLayerSprite.classList.add(styles.layer);
+
+    mazeElement.appendChild(tileLayerSprite);
+
+    const wallLayer = new WallLayer({ cellSize }, cells, walls);
+
+    wallLayer.draw();
+
+    const wallLayerSprite = wallLayer.sprite!;
+    wallLayerSprite.classList.add(styles.layer);
+
+    mazeElement.appendChild(wallLayerSprite);
+
+    const objectLayer = new ObjectLayer({ cellSize }, cells, objects);
+
+    objectLayer.draw();
+
+    const objectLayerSprite = objectLayer.sprite!;
+    objectLayerSprite.classList.add(styles.layer);
+
+    mazeElement.appendChild(objectLayerSprite);
+
+    mazeElement.appendChild(this.playerSprite.sprite!);
 
     this.drawPlayer();
 
@@ -84,26 +136,26 @@ export default class Museum {
       for (const key of keyPrecedence) {
         if (pressedKeys.has(key)) {
           const { playerPosition } = this;
-          const [y, x] = playerPosition;
+          const [x, y] = playerPosition;
 
           let animation: () => Promise<void>, newPosition: Position;
 
           switch (key) {
             case 'ArrowUp':
               animation = () => this.playerSprite.drawWalkingUp();
-              newPosition = [y - 1, x];
+              newPosition = [x, y - 1];
               break;
             case 'ArrowRight':
               animation = () => this.playerSprite.drawWalkingRight();
-              newPosition = [y, x + 1];
+              newPosition = [x + 1, y];
               break;
             case 'ArrowDown':
               animation = () => this.playerSprite.drawWalkingDown();
-              newPosition = [y + 1, x];
+              newPosition = [x, y + 1];
               break;
             case 'ArrowLeft':
               animation = () => this.playerSprite.drawWalkingLeft();
-              newPosition = [y, x - 1];
+              newPosition = [x - 1, y];
               break;
             default:
               return;
@@ -116,15 +168,17 @@ export default class Museum {
               const [newTop, newLeft] = this.getTopLeftValues(newPosition);
               await Promise.all([
                 animation(),
-                this.playerSpriteElement.animate(
-                  [{ top: newTop, left: newLeft }],
-                  ANIMATION_RATE
-                ),
+                this.playerSprite
+                  .sprite!.animate(
+                    [{ top: newTop, left: newLeft }],
+                    ANIMATION_RATE
+                  )
+                  .finished.then(() => {
+                    this.updatePlayer(newPosition);
+
+                    this.drawPlayer();
+                  }),
               ]);
-
-              this.updatePlayer(newPosition);
-
-              this.drawPlayer();
 
               await new Promise((resolve) => setTimeout(resolve, 1000 / 60));
             } catch (error) {
@@ -149,30 +203,16 @@ export default class Museum {
     });
   }
 
-  private drawCell([i, j]: Position): HTMLElement {
-    const cellId = this.getCellId([j, i]);
-
-    const cellElement = document.createElement('div');
-    cellElement.className = styles.cell;
-    cellElement.id = cellId;
-    cellElement.style.gridArea = `${j + 1} / ${i + 1}`;
-
-    const cellHolder = document.createElement('div');
-    cellHolder.className = styles.spriteHolder;
-
-    const tileSprite = new TileSprite({ cellSize: this.args.cellSize });
-    tileSprite.draw();
-
-    cellHolder.appendChild(tileSprite.sprite!);
-
-    cellElement.appendChild(cellHolder);
-
-    return cellElement;
-  }
-
-  private getCellId(position: Position): string {
-    const [x, y] = position;
-    return `cell-${y}-${x}`;
+  private isObjectInCell(
+    [cellX, cellY]: Position,
+    { origin: [originX, originY], width, height }: MuseumObject
+  ): boolean {
+    return (
+      cellY >= originY &&
+      cellY < originY + height &&
+      cellX >= originX &&
+      cellX < originX + width
+    );
   }
 
   private canUpdatePlayer(newPosition: Position): boolean {
@@ -180,8 +220,9 @@ export default class Museum {
 
     return (
       newPosition.every((pos) => pos >= 0) &&
-      newPosition[0] < height &&
-      newPosition[1] < width
+      newPosition[0] < width &&
+      newPosition[1] < height &&
+      !this.wallPositions.has(this.getWallKey(newPosition))
     );
   }
 
@@ -192,18 +233,19 @@ export default class Museum {
       return;
     }
 
-    this.cells[playerPosition[0]][playerPosition[1]].data = undefined;
+    delete this.cells[playerPosition[1]][playerPosition[0]].data?.hasPlayer;
 
     this.playerPosition = newPosition;
 
-    this.cells[playerPosition[0]][playerPosition[1]].data = {
+    this.cells[playerPosition[1]][playerPosition[0]].data = {
+      ...this.cells[playerPosition[1]][playerPosition[0]].data,
       hasPlayer: true,
     };
   }
 
   private getTopLeftValues(position: Position): [string, string] {
     const { cellSize } = this.args;
-    const [y, x] = position;
+    const [x, y] = position;
 
     return [`${cellSize * y}px`, `${cellSize * x}px`];
   }
@@ -211,7 +253,11 @@ export default class Museum {
   private drawPlayer() {
     const [top, left] = this.getTopLeftValues(this.playerPosition);
 
-    this.playerSpriteElement.style.top = top;
-    this.playerSpriteElement.style.left = left;
+    this.playerSprite.sprite!.style.top = top;
+    this.playerSprite.sprite!.style.left = left;
+  }
+
+  private getWallKey([y, x]: Position): string {
+    return `${y}-${x}`;
   }
 }

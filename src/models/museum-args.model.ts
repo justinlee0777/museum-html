@@ -1,3 +1,5 @@
+import MuseumObject from './museum-object.model';
+import { MuseumWall } from './museum-wall.model';
 import Position from './position.model';
 
 export default interface MuseumArgs {
@@ -5,4 +7,7 @@ export default interface MuseumArgs {
   height: number;
   playerPosition: Position;
   cellSize: number;
+
+  objects: Array<MuseumObject>;
+  walls: Array<MuseumWall>;
 }
