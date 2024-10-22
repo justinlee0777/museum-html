@@ -1,8 +1,8 @@
 import Cell from '../models/cell.model';
 import { MuseumWall, MuseumWallType } from '../models/museum-wall.model';
 import Position from '../models/position.model';
+import WallRegistry from '../models/registries/wall-registry.model';
 import DrawSprite from '../sprites/models/draw-sprite.model';
-import WallSprite from '../sprites/wall';
 
 interface WallLayerArgs {
   cellSize: number;
@@ -17,6 +17,7 @@ export default class WallLayer {
   sprite: HTMLCanvasElement | undefined;
 
   constructor(
+    private registry: WallRegistry,
     private args: WallLayerArgs,
     private cells: Array<Array<Cell>>,
     private walls: Array<MuseumWall>
@@ -89,7 +90,7 @@ export default class WallLayer {
         );
       };
 
-      WallSprite.draw(drawSprite, wallType);
+      this.registry.draw(drawSprite, { cell: cells[oy][ox], wallType });
     }
 
     this.sprite = canvas;

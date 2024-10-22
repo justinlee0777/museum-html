@@ -1,15 +1,8 @@
 import Position from './position.model';
 
-interface CommonMuseumObject {
+export default interface MuseumObject {
   origin: Position;
   width: number;
   height: number;
+  sprite: string;
 }
-
-export interface LongPaintingMuseumObject extends CommonMuseumObject {
-  sprite: 'long-painting';
-}
-
-type MuseumObject = LongPaintingMuseumObject;
-
-export default MuseumObject;

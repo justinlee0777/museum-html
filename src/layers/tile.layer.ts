@@ -1,6 +1,6 @@
 import Cell from '../models/cell.model';
+import TileRegistry from '../models/registries/tile-registry.model';
 import DrawSprite from '../sprites/models/draw-sprite.model';
-import TileSprite from '../sprites/tile';
 
 interface TileLayerArgs {
   cellSize: number;
@@ -9,7 +9,11 @@ interface TileLayerArgs {
 export default class TileLayer {
   sprite: HTMLCanvasElement | undefined;
 
-  constructor(private args: TileLayerArgs, private cells: Array<Array<Cell>>) {}
+  constructor(
+    private registry: TileRegistry,
+    private args: TileLayerArgs,
+    private cells: Array<Array<Cell>>
+  ) {}
 
   draw(): void {
     const { cellSize } = this.args;
@@ -24,7 +28,7 @@ export default class TileLayer {
     context.imageSmoothingEnabled = false;
 
     cells.forEach((row, j) => {
-      row.forEach((_, i) => {
+      row.forEach((cell, i) => {
         const drawSprite: DrawSprite = (image, sx, sy, sw, sh) => {
           context.drawImage(
             image,
@@ -39,7 +43,7 @@ export default class TileLayer {
           );
         };
 
-        TileSprite.draw(drawSprite);
+        this.registry.draw(drawSprite, { cell });
       });
     });
 

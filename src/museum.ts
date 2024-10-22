@@ -82,13 +82,13 @@ export default class Museum {
 
   draw(): HTMLElement {
     const { cells } = this;
-    const { height, width, cellSize, objects, walls } = this.args;
+    const { height, width, cellSize, objects, walls, registries } = this.args;
 
     const mazeElement = (this.museumElement = document.createElement('div'));
     mazeElement.className = styles.maze;
     mazeElement.style.gridTemplate = `repeat(${height}, ${cellSize}px) / repeat(${width}, ${cellSize}px)`;
 
-    const tileLayer = new TileLayer({ cellSize }, cells);
+    const tileLayer = new TileLayer(registries.tile, { cellSize }, cells);
 
     tileLayer.draw();
 
@@ -97,7 +97,12 @@ export default class Museum {
 
     mazeElement.appendChild(tileLayerSprite);
 
-    const wallLayer = new WallLayer({ cellSize }, cells, walls);
+    const wallLayer = new WallLayer(
+      registries.wall,
+      { cellSize },
+      cells,
+      walls
+    );
 
     wallLayer.draw();
 
@@ -106,7 +111,12 @@ export default class Museum {
 
     mazeElement.appendChild(wallLayerSprite);
 
-    const objectLayer = new ObjectLayer({ cellSize }, cells, objects);
+    const objectLayer = new ObjectLayer(
+      registries.object,
+      { cellSize },
+      cells,
+      objects
+    );
 
     objectLayer.draw();
 

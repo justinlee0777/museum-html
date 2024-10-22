@@ -1,6 +1,6 @@
 import Cell from '../models/cell.model';
 import MuseumObject from '../models/museum-object.model';
-import LongPaintingSprite from '../sprites/long-painting';
+import ObjectRegistry from '../models/registries/object-registry.model';
 import DrawSprite from '../sprites/models/draw-sprite.model';
 
 interface ObjectLayerArgs {
@@ -11,6 +11,7 @@ export default class ObjectLayer {
   sprite: HTMLCanvasElement | undefined;
 
   constructor(
+    private registry: ObjectRegistry,
     private args: ObjectLayerArgs,
     private cells: Array<Array<Cell>>,
     private objects: Array<MuseumObject>
@@ -28,10 +29,10 @@ export default class ObjectLayer {
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;
 
-    for (const {
-      origin: [ox, oy],
-      width,
-    } of this.objects) {
+    for (const object of this.objects) {
+      const {
+        origin: [ox, oy],
+      } = object;
       const drawSprite: DrawSprite = (
         image,
         sx,
@@ -54,7 +55,7 @@ export default class ObjectLayer {
         );
       };
 
-      LongPaintingSprite.draw(drawSprite, { width });
+      this.registry.draw(drawSprite, { object });
     }
 
     this.sprite = canvas;
