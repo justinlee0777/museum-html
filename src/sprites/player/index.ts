@@ -31,7 +31,31 @@ export default class PlayerSprite {
   constructor(private args: Args) {}
 
   draw(startingPosture: SpritePosture): void {
-    this.drawSprite(startingPosture);
+    this.drawSprite((this.lastPosture = startingPosture));
+  }
+
+  getDirection(): 'Up' | 'Right' | 'Down' | 'Left' {
+    switch (this.lastPosture) {
+      case undefined:
+        throw new Error('Sprite not initialized with a posture.');
+      case SpritePosture.RIGHT_FOOT_DOWN:
+      case SpritePosture.DOWN_STANDING:
+      case SpritePosture.LEFT_FOOT_DOWN:
+        return 'Down';
+
+      case SpritePosture.LEFT_FOOT_UP:
+      case SpritePosture.UP_STANDING:
+      case SpritePosture.RIGHT_FOOT_UP:
+        return 'Up';
+
+      case SpritePosture.LEFT_STANDING:
+      case SpritePosture.LEFT_WALKING:
+        return 'Left';
+
+      case SpritePosture.RIGHT_STANDING:
+      case SpritePosture.RIGHT_WALKING:
+        return 'Right';
+    }
   }
 
   async drawWalkingUp(): Promise<void> {

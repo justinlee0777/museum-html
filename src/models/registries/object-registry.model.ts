@@ -1,5 +1,5 @@
 import DrawSprite from '../../sprites/models/draw-sprite.model';
-import MuseumObject from '../museum-object.model';
+import { MuseumObject } from '../museum-object.model';
 
 interface ObjectArgs {
   object: MuseumObject;

@@ -1,4 +1,4 @@
-import MuseumObject from './museum-object.model';
+import { MuseumObject } from './museum-object.model';
 import { MuseumWall } from './museum-wall.model';
 import Position from './position.model';
 import ObjectRegistry from './registries/object-registry.model';

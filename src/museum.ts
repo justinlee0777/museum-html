@@ -7,7 +7,10 @@ import PlayerSprite, {
   SpritePosture as PlayerSpritePosture,
 } from './sprites/player';
 import ANIMATION_RATE from './consts/animate-rate.const';
-import MuseumObject from './models/museum-object.model';
+import {
+  MuseumObject,
+  MuseumObjectInteraction,
+} from './models/museum-object.model';
 import TileLayer from './layers/tile.layer';
 import ObjectLayer from './layers/object.layer';
 import WallLayer from './layers/wall.layer';
@@ -22,6 +25,8 @@ export default class Museum {
   private playerSprite: PlayerSprite;
 
   private museumElement: HTMLElement | undefined;
+
+  private interactionFrame: HTMLElement | undefined;
 
   constructor(public args: MuseumArgs) {
     const { height, width, cellSize, playerPosition, objects, walls } = args;
@@ -82,24 +87,35 @@ export default class Museum {
 
   draw(): HTMLElement {
     const { cells } = this;
-    const { height, width, cellSize, objects, walls, registries } = this.args;
+    const { cellSize, objects, walls, registries } = this.args;
+
+    const height = cells.length * cellSize;
+    const width = cells[0].length * cellSize;
 
     const mazeElement = (this.museumElement = document.createElement('div'));
-    mazeElement.className = styles.maze;
-    mazeElement.style.gridTemplate = `repeat(${height}, ${cellSize}px) / repeat(${width}, ${cellSize}px)`;
+    mazeElement.className = styles.museum;
 
-    const tileLayer = new TileLayer(registries.tile, { cellSize }, cells);
+    const museumFrame = document.createElement('div');
+    museumFrame.className = styles.museumFrame;
+    museumFrame.style.height = `${height}px`;
+    museumFrame.style.width = `${width}px`;
+
+    const tileLayer = new TileLayer(
+      registries.tile,
+      { cellSize, height, width },
+      cells
+    );
 
     tileLayer.draw();
 
     const tileLayerSprite = tileLayer.sprite!;
     tileLayerSprite.classList.add(styles.layer);
 
-    mazeElement.appendChild(tileLayerSprite);
+    museumFrame.appendChild(tileLayerSprite);
 
     const wallLayer = new WallLayer(
       registries.wall,
-      { cellSize },
+      { cellSize, height, width },
       cells,
       walls
     );
@@ -109,12 +125,11 @@ export default class Museum {
     const wallLayerSprite = wallLayer.sprite!;
     wallLayerSprite.classList.add(styles.layer);
 
-    mazeElement.appendChild(wallLayerSprite);
+    museumFrame.appendChild(wallLayerSprite);
 
     const objectLayer = new ObjectLayer(
       registries.object,
-      { cellSize },
-      cells,
+      { cellSize, height, width },
       objects
     );
 
@@ -123,9 +138,22 @@ export default class Museum {
     const objectLayerSprite = objectLayer.sprite!;
     objectLayerSprite.classList.add(styles.layer);
 
-    mazeElement.appendChild(objectLayerSprite);
+    museumFrame.appendChild(objectLayerSprite);
 
-    mazeElement.appendChild(this.playerSprite.sprite!);
+    museumFrame.appendChild(this.playerSprite.sprite!);
+
+    mazeElement.appendChild(museumFrame);
+
+    /*
+    const interactionFrame = (this.interactionFrame =
+      document.createElement('div'));
+
+    interactionFrame.className = styles.interactionFrame;
+    interactionFrame.style.height = `${height}px`;
+    interactionFrame.style.width = `${width}px`;
+
+    mazeElement.appendChild(interactionFrame);
+    */
 
     this.drawPlayer();
 
@@ -134,7 +162,15 @@ export default class Museum {
 
   addKeyListeners(): void {
     const pressedKeys: Set<String> = new Set();
-    const keyPrecedence = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
+    const keyPrecedence = [
+      'Escape',
+      'A',
+      'a',
+      'ArrowUp',
+      'ArrowRight',
+      'ArrowDown',
+      'ArrowLeft',
+    ];
 
     let updatePlayerLock = false;
 
@@ -145,58 +181,33 @@ export default class Museum {
 
       for (const key of keyPrecedence) {
         if (pressedKeys.has(key)) {
-          const { playerPosition } = this;
-          const [x, y] = playerPosition;
+          updatePlayerLock = true;
 
-          let animation: () => Promise<void>, newPosition: Position;
-
-          switch (key) {
-            case 'ArrowUp':
-              animation = () => this.playerSprite.drawWalkingUp();
-              newPosition = [x, y - 1];
-              break;
-            case 'ArrowRight':
-              animation = () => this.playerSprite.drawWalkingRight();
-              newPosition = [x + 1, y];
-              break;
-            case 'ArrowDown':
-              animation = () => this.playerSprite.drawWalkingDown();
-              newPosition = [x, y + 1];
-              break;
-            case 'ArrowLeft':
-              animation = () => this.playerSprite.drawWalkingLeft();
-              newPosition = [x - 1, y];
-              break;
-            default:
-              return;
-          }
-
-          if (this.canUpdatePlayer(newPosition)) {
-            updatePlayerLock = true;
-
-            try {
-              const [newTop, newLeft] = this.getTopLeftValues(newPosition);
-              await Promise.all([
-                animation(),
-                this.playerSprite
-                  .sprite!.animate(
-                    [{ top: newTop, left: newLeft }],
-                    ANIMATION_RATE
-                  )
-                  .finished.then(() => {
-                    this.updatePlayer(newPosition);
-
-                    this.drawPlayer();
-                  }),
-              ]);
-
-              await new Promise((resolve) => setTimeout(resolve, 1000 / 60));
-            } catch (error) {
-              console.log('error updating player', error);
-            } finally {
-              updatePlayerLock = false;
+          try {
+            switch (key) {
+              case 'ArrowUp':
+              case 'ArrowRight':
+              case 'ArrowDown':
+              case 'ArrowLeft':
+                await this.movePlayer(key);
+                break;
+              case 'A':
+              case 'a':
+                this.openObjectDescription();
+                break;
+              case 'Escape':
+                if (this.interactionFrame) {
+                  this.interactionFrame.remove();
+                  this.interactionFrame = undefined;
+                }
+                break;
+              default:
+                return;
             }
-            return;
+          } catch (error) {
+            console.log('error updating player', error);
+          } finally {
+            updatePlayerLock = false;
           }
         }
       }
@@ -215,8 +226,20 @@ export default class Museum {
 
   private isObjectInCell(
     [cellX, cellY]: Position,
-    { origin: [originX, originY], width, height }: MuseumObject
+    object: MuseumObject
   ): boolean {
+    let originX: number,
+      originY: number,
+      width = 1,
+      height = 1;
+
+    if ('origin' in object) {
+      [originX, originY] = object.origin;
+      ({ height, width } = object);
+    } else {
+      [originX, originY] = object.position;
+    }
+
     return (
       cellY >= originY &&
       cellY < originY + height &&
@@ -265,6 +288,164 @@ export default class Museum {
 
     this.playerSprite.sprite!.style.top = top;
     this.playerSprite.sprite!.style.left = left;
+  }
+
+  private async movePlayer(
+    key: 'ArrowUp' | 'ArrowRight' | 'ArrowDown' | 'ArrowLeft'
+  ) {
+    const { playerPosition } = this;
+    const [x, y] = playerPosition;
+
+    let animation: () => Promise<void>, newPosition: Position;
+
+    switch (key) {
+      case 'ArrowUp':
+        animation = () => this.playerSprite.drawWalkingUp();
+        newPosition = [x, y - 1];
+        break;
+      case 'ArrowRight':
+        animation = () => this.playerSprite.drawWalkingRight();
+        newPosition = [x + 1, y];
+        break;
+      case 'ArrowDown':
+        animation = () => this.playerSprite.drawWalkingDown();
+        newPosition = [x, y + 1];
+        break;
+      case 'ArrowLeft':
+        animation = () => this.playerSprite.drawWalkingLeft();
+        newPosition = [x - 1, y];
+        break;
+    }
+
+    if (!this.canUpdatePlayer(newPosition)) {
+      newPosition = this.playerPosition;
+    }
+
+    const [newTop, newLeft] = this.getTopLeftValues(newPosition);
+    await Promise.all([
+      animation(),
+      this.playerSprite
+        .sprite!.animate([{ top: newTop, left: newLeft }], ANIMATION_RATE)
+        .finished.then(() => {
+          this.updatePlayer(newPosition);
+
+          this.drawPlayer();
+        }),
+    ]);
+
+    await new Promise((resolve) => setTimeout(resolve, 1000 / 60));
+  }
+
+  private openObjectDescription(): void {
+    const {
+      playerPosition: [px, py],
+      playerSprite,
+      args: { height, width, objects },
+    } = this;
+
+    let newY = py,
+      newX = px;
+
+    switch (playerSprite.getDirection()) {
+      case 'Up':
+        newY = py - 1;
+        if (newY < 0) {
+          return;
+        }
+        break;
+      case 'Right':
+        newX = px + 1;
+        if (newX >= width) {
+          return;
+        }
+        break;
+      case 'Down':
+        newY = py + 1;
+        if (newY >= height) {
+          return;
+        }
+        break;
+      case 'Left':
+        newX = px - 1;
+        if (newX < 0) {
+          return;
+        }
+        break;
+    }
+
+    const interactions = objects.reduce(
+      (
+        acc: Array<MuseumObjectInteraction & { object: MuseumObject }>,
+        object
+      ) =>
+        acc.concat(
+          (object.interactions ?? []).map((interaction) => ({
+            ...interaction,
+            object,
+          }))
+        ),
+      []
+    );
+
+    for (const interaction of interactions) {
+      let minX: number, minY: number, maxX: number, maxY: number;
+
+      let ox: number,
+        oy: number,
+        height = 1,
+        width = 1;
+
+      if ('origin' in interaction) {
+        [ox, oy] = interaction.origin;
+        ({ height, width } = interaction);
+      } else if ('position' in interaction) {
+        [ox, oy] = interaction.position;
+      } else {
+        const { object } = interaction;
+
+        if ('origin' in object) {
+          [ox, oy] = object.origin;
+          ({ height, width } = object);
+        } else {
+          [ox, oy] = object.position;
+        }
+      }
+
+      minX = ox;
+      minY = oy;
+      maxX = ox + width;
+      maxY = ox + height;
+
+      // going to assume objects / interactions do not overlap.
+      if (minX <= newX && maxX >= newX && minY <= newY && maxY >= newY) {
+        const museumElement = this.museumElement!;
+
+        if (this.interactionFrame) {
+          this.interactionFrame.remove();
+        }
+
+        const interactionFrame = (this.interactionFrame =
+          document.createElement('div'));
+        interactionFrame.className = styles.interactionFrame;
+
+        if ('description' in interaction) {
+          const objectDescription = document.createElement('div');
+          objectDescription.textContent = interaction.description;
+          objectDescription.className = styles.objectDescription;
+
+          interactionFrame.appendChild(objectDescription);
+        } else {
+          const image = document.createElement('img');
+          image.src = interaction.url;
+
+          interactionFrame.appendChild(image);
+        }
+
+        museumElement.appendChild(interactionFrame);
+
+        return;
+      }
+    }
   }
 
   private getWallKey([y, x]: Position): string {

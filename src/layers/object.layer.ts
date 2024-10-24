@@ -1,10 +1,11 @@
-import Cell from '../models/cell.model';
-import MuseumObject from '../models/museum-object.model';
+import { MuseumObject } from '../models/museum-object.model';
 import ObjectRegistry from '../models/registries/object-registry.model';
 import DrawSprite from '../sprites/models/draw-sprite.model';
 
 interface ObjectLayerArgs {
   cellSize: number;
+  height: number;
+  width: number;
 }
 
 export default class ObjectLayer {
@@ -13,26 +14,29 @@ export default class ObjectLayer {
   constructor(
     private registry: ObjectRegistry,
     private args: ObjectLayerArgs,
-    private cells: Array<Array<Cell>>,
     private objects: Array<MuseumObject>
   ) {}
 
   draw(): void {
-    const { cells } = this;
-    const { cellSize } = this.args;
+    const { cellSize, height, width } = this.args;
 
     const canvas = document.createElement('canvas');
 
-    canvas.height = cells.length * cellSize;
-    canvas.width = cells[0].length * cellSize;
+    canvas.height = height;
+    canvas.width = width;
 
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;
 
     for (const object of this.objects) {
-      const {
-        origin: [ox, oy],
-      } = object;
+      let ox: number, oy: number;
+
+      if ('origin' in object) {
+        [ox, oy] = object.origin;
+      } else {
+        [ox, oy] = object.position;
+      }
+
       const drawSprite: DrawSprite = (
         image,
         sx,
