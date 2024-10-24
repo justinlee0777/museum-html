@@ -16,8 +16,6 @@ interface WallPosition {
 }
 
 export default class WallLayer {
-  sprite: HTMLCanvasElement | undefined;
-
   constructor(
     private registry: WallRegistry,
     private args: WallLayerArgs,
@@ -25,14 +23,9 @@ export default class WallLayer {
     private walls: Array<MuseumWall>
   ) {}
 
-  draw(): void {
+  draw(canvas: HTMLCanvasElement): void {
     const { cellSize, height, width } = this.args;
     const { cells, walls } = this;
-
-    const canvas = document.createElement('canvas');
-
-    canvas.height = height;
-    canvas.width = width;
 
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;
@@ -94,8 +87,6 @@ export default class WallLayer {
 
       this.registry.draw(drawSprite, { cell: cells[oy][ox], wallType });
     }
-
-    this.sprite = canvas;
   }
 
   private getWallKey([x, y]: Position): string {

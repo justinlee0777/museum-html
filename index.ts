@@ -11,7 +11,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const height = 8;
   const width = 16;
 
-  const cellSize = 32;
+  const cellSize = 48;
 
   const museum = new Museum({
     height,

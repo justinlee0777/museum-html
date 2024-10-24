@@ -1,12 +1,15 @@
+/** TODO **/
+body {
+  margin: 0;
+}
+
 .museum {
-  align-items: center;
-  border: 1px solid black;
-  display: inline-flex;
-  flex-direction: column;
-  margin: auto;
-  max-height: 90vw;
-  max-width: 90vw;
+  display: inline-block;
+  overflow: hidden;
   position: relative;
+  /** TODO **/
+  max-height: 100vh;
+  max-width: 100vw;
 }
 
 .cell {
@@ -19,15 +22,12 @@
   top: 0;
 }
 
-.layer {
-  left: 0;
-  position: absolute;
-  top: 0;
-}
-
 .museumFrame {
   border-radius: 2px;
+  height: 100%;
+  overflow: hidden;
   position: relative;
+  width: 100%;
 }
 
 .interactionFrame {
@@ -35,13 +35,11 @@
   border-radius: 2px;
   box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
-  left: 0;
   max-height: 100%;
-  max-width: 100%;
   overflow-y: auto;
   padding: 2em;
   position: absolute;
-  top: 0;
+  width: 100%;
 }
 
 .objectDescription {

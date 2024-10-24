@@ -9,21 +9,14 @@ interface ObjectLayerArgs {
 }
 
 export default class ObjectLayer {
-  sprite: HTMLCanvasElement | undefined;
-
   constructor(
     private registry: ObjectRegistry,
     private args: ObjectLayerArgs,
     private objects: Array<MuseumObject>
   ) {}
 
-  draw(): void {
+  draw(canvas: HTMLCanvasElement): void {
     const { cellSize, height, width } = this.args;
-
-    const canvas = document.createElement('canvas');
-
-    canvas.height = height;
-    canvas.width = width;
 
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;
@@ -61,7 +54,5 @@ export default class ObjectLayer {
 
       this.registry.draw(drawSprite, { object });
     }
-
-    this.sprite = canvas;
   }
 }

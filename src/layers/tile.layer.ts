@@ -9,22 +9,15 @@ interface TileLayerArgs {
 }
 
 export default class TileLayer {
-  sprite: HTMLCanvasElement | undefined;
-
   constructor(
     private registry: TileRegistry,
     private args: TileLayerArgs,
     private cells: Array<Array<Cell>>
   ) {}
 
-  draw(): void {
+  draw(canvas: HTMLCanvasElement): void {
     const { cellSize, height, width } = this.args;
     const { cells } = this;
-
-    const canvas = document.createElement('canvas');
-
-    canvas.height = height;
-    canvas.width = width;
 
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;
@@ -48,7 +41,5 @@ export default class TileLayer {
         this.registry.draw(drawSprite, { cell });
       });
     });
-
-    this.sprite = canvas;
   }
 }

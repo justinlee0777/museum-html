@@ -24,7 +24,13 @@ export default class Museum {
 
   private playerSprite: PlayerSprite;
 
-  private museumElement: HTMLElement | undefined;
+  private initialized:
+    | {
+        museumElement: HTMLElement;
+        width: number;
+        height: number;
+      }
+    | undefined;
 
   private interactionFrame: HTMLElement | undefined;
 
@@ -92,13 +98,12 @@ export default class Museum {
     const height = cells.length * cellSize;
     const width = cells[0].length * cellSize;
 
-    const mazeElement = (this.museumElement = document.createElement('div'));
-    mazeElement.className = styles.museum;
+    const museumElement = document.createElement('div');
+    museumElement.className = styles.museum;
 
-    const museumFrame = document.createElement('div');
-    museumFrame.className = styles.museumFrame;
-    museumFrame.style.height = `${height}px`;
-    museumFrame.style.width = `${width}px`;
+    const canvasElement = document.createElement('canvas');
+    canvasElement.height = height;
+    canvasElement.width = width;
 
     const tileLayer = new TileLayer(
       registries.tile,
@@ -106,12 +111,7 @@ export default class Museum {
       cells
     );
 
-    tileLayer.draw();
-
-    const tileLayerSprite = tileLayer.sprite!;
-    tileLayerSprite.classList.add(styles.layer);
-
-    museumFrame.appendChild(tileLayerSprite);
+    tileLayer.draw(canvasElement);
 
     const wallLayer = new WallLayer(
       registries.wall,
@@ -120,12 +120,7 @@ export default class Museum {
       walls
     );
 
-    wallLayer.draw();
-
-    const wallLayerSprite = wallLayer.sprite!;
-    wallLayerSprite.classList.add(styles.layer);
-
-    museumFrame.appendChild(wallLayerSprite);
+    wallLayer.draw(canvasElement);
 
     const objectLayer = new ObjectLayer(
       registries.object,
@@ -133,33 +128,27 @@ export default class Museum {
       objects
     );
 
-    objectLayer.draw();
+    objectLayer.draw(canvasElement);
 
-    const objectLayerSprite = objectLayer.sprite!;
-    objectLayerSprite.classList.add(styles.layer);
+    museumElement.appendChild(canvasElement);
 
-    museumFrame.appendChild(objectLayerSprite);
+    museumElement.appendChild(this.playerSprite.sprite!);
 
-    museumFrame.appendChild(this.playerSprite.sprite!);
-
-    mazeElement.appendChild(museumFrame);
-
-    /*
-    const interactionFrame = (this.interactionFrame =
-      document.createElement('div'));
-
-    interactionFrame.className = styles.interactionFrame;
-    interactionFrame.style.height = `${height}px`;
-    interactionFrame.style.width = `${width}px`;
-
-    mazeElement.appendChild(interactionFrame);
-    */
+    this.initialized = {
+      museumElement,
+      width,
+      height,
+    };
 
     this.drawPlayer();
 
-    return mazeElement;
+    return museumElement;
   }
 
+  /*
+   * TODO Wondering if there's any wisdom in ripping out the event system directly from the museum itself
+   * and abstracting these actions.
+   */
   addKeyListeners(): void {
     const pressedKeys: Set<String> = new Set();
     const keyPrecedence = [
@@ -189,7 +178,9 @@ export default class Museum {
               case 'ArrowRight':
               case 'ArrowDown':
               case 'ArrowLeft':
-                await this.movePlayer(key);
+                if (!this.interactionFrame) {
+                  await this.movePlayer(key);
+                }
                 break;
               case 'A':
               case 'a':
@@ -283,11 +274,40 @@ export default class Museum {
     return [`${cellSize * y}px`, `${cellSize * x}px`];
   }
 
+  private getCameraOrigin(): Position {
+    const {
+      playerPosition: [x, y],
+      args: { cellSize },
+    } = this;
+
+    const { museumElement } = this.initialized!;
+
+    const playerX = x * cellSize;
+    const playerY = y * cellSize;
+
+    const diffX = museumElement.clientWidth / 2;
+    const diffY = museumElement.clientHeight / 2;
+
+    return [Math.max(0, playerX - diffX), Math.max(0, playerY - diffY)];
+  }
+
   private drawPlayer() {
-    const [top, left] = this.getTopLeftValues(this.playerPosition);
+    const { playerPosition } = this;
+
+    const [top, left] = this.getTopLeftValues(playerPosition);
 
     this.playerSprite.sprite!.style.top = top;
     this.playerSprite.sprite!.style.left = left;
+
+    const { museumElement } = this.initialized!;
+
+    const [scrollLeft, scrollTop] = this.getCameraOrigin();
+
+    museumElement.scroll({
+      top: scrollTop,
+      left: scrollLeft,
+      behavior: 'smooth',
+    });
   }
 
   private async movePlayer(
@@ -418,7 +438,7 @@ export default class Museum {
 
       // going to assume objects / interactions do not overlap.
       if (minX <= newX && maxX >= newX && minY <= newY && maxY >= newY) {
-        const museumElement = this.museumElement!;
+        const { museumElement } = this.initialized!;
 
         if (this.interactionFrame) {
           this.interactionFrame.remove();
@@ -427,6 +447,8 @@ export default class Museum {
         const interactionFrame = (this.interactionFrame =
           document.createElement('div'));
         interactionFrame.className = styles.interactionFrame;
+        interactionFrame.style.top = `${museumElement.scrollTop}px`;
+        interactionFrame.style.left = `${museumElement.scrollLeft}px`;
 
         if ('description' in interaction) {
           const objectDescription = document.createElement('div');
