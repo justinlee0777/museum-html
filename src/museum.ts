@@ -105,6 +105,7 @@ export default class Museum {
     const width = cells[0].length * cellSize;
 
     const museumElement = document.createElement('div');
+    museumElement.tabIndex = 0;
     museumElement.className = styles.museum;
 
     const canvasElement = document.createElement('canvas');
@@ -157,6 +158,7 @@ export default class Museum {
       'Escape',
       'A',
       'a',
+      'Enter',
       '-',
       '=',
       '_',
@@ -180,15 +182,19 @@ export default class Museum {
 
           try {
             switch (key) {
-              case 'A':
-              case 'a':
-                this.openObjectDescription();
-                break;
               case 'Escape':
                 if (this.interactionContext) {
                   this.interactionContext.interactionFrame.remove();
                   this.interactionContext = undefined;
+                  this.initialized!.museumElement.focus();
                 }
+                break;
+              case 'A':
+              case 'a':
+                this.openObjectDescription();
+                break;
+              case 'Enter':
+                this.openHelpMenu();
                 break;
               case '-':
               case '_':
@@ -222,12 +228,14 @@ export default class Museum {
       }
     };
 
-    document.body.addEventListener('keydown', (event) => {
+    const { museumElement } = this.initialized!;
+
+    museumElement.addEventListener('keydown', (event) => {
       pressedKeys.add(event.key);
       updatePlayer();
     });
 
-    document.addEventListener('keyup', (event) => {
+    museumElement.addEventListener('keyup', (event) => {
       pressedKeys.delete(event.key);
       updatePlayer();
     });
@@ -374,6 +382,18 @@ export default class Museum {
     await new Promise((resolve) => setTimeout(resolve, 1000 / 60));
   }
 
+  private createInteractionFrame(): HTMLElement {
+    const { museumElement } = this.initialized!;
+
+    const interactionFrame = document.createElement('div');
+    interactionFrame.className = styles.interactionFrame;
+    interactionFrame.style.bottom = `0px`;
+    interactionFrame.style.left = `${museumElement.scrollLeft}px`;
+    interactionFrame.tabIndex = 0;
+
+    return interactionFrame;
+  }
+
   private openObjectDescription(): void {
     const {
       playerPosition: [px, py],
@@ -430,8 +450,8 @@ export default class Museum {
 
       let ox: number,
         oy: number,
-        height = 1,
-        width = 1;
+        height = 0,
+        width = 0;
 
       if ('origin' in interaction) {
         [ox, oy] = interaction.origin;
@@ -463,11 +483,7 @@ export default class Museum {
           this.interactionContext = undefined;
         }
 
-        const interactionFrame = document.createElement('div');
-        interactionFrame.className = styles.interactionFrame;
-        interactionFrame.style.bottom = `0px`;
-        interactionFrame.style.left = `${museumElement.scrollLeft}px`;
-        interactionFrame.tabIndex = 0;
+        const interactionFrame = this.createInteractionFrame();
 
         let painting: Painting | undefined;
 
@@ -501,6 +517,111 @@ export default class Museum {
         return;
       }
     }
+  }
+
+  private openHelpMenu(): void {
+    if (this.interactionContext) {
+      this.interactionContext.interactionFrame.remove();
+      this.interactionContext = undefined;
+    }
+
+    const interactionFrame = this.createInteractionFrame();
+
+    interface Action {
+      key: string;
+      description: string;
+    }
+
+    const generalActions: Array<Action> = [
+      {
+        key: '\u21E6',
+        description: 'Left',
+      },
+      {
+        key: '\u21E7',
+        description: 'Up',
+      },
+      {
+        key: '\u21E8',
+        description: 'Right',
+      },
+      {
+        key: '\u21E9',
+        description: 'Down',
+      },
+      {
+        key: 'Enter',
+        description: 'Help',
+      },
+    ];
+
+    const museumActions: Array<Action> = [
+      {
+        key: 'A',
+        description: 'Interact',
+      },
+    ];
+
+    const menuActions: Array<Action> = [
+      {
+        key: 'Escape',
+        description: 'Close',
+      },
+      {
+        key: '+',
+        description: 'Zoom in',
+      },
+      {
+        key: '-',
+        description: 'Zoom out',
+      },
+    ];
+
+    const helpMenu = document.createElement('div');
+    helpMenu.classList.add(styles.helpMenu);
+
+    const generalActionsHeader = document.createElement('h3');
+    generalActionsHeader.classList.add(styles.helpMenuHeader);
+    generalActionsHeader.textContent = 'General';
+
+    const museumActionsHeader = document.createElement('h3');
+    museumActionsHeader.classList.add(styles.helpMenuHeader);
+    museumActionsHeader.textContent = 'Museum';
+
+    const menuActionsHeader = document.createElement('h3');
+    menuActionsHeader.classList.add(styles.helpMenuHeader);
+    menuActionsHeader.textContent = 'Menu';
+
+    function createActionElement({ key, description }: Action): HTMLElement {
+      const actionElement = document.createElement('span');
+
+      const keyElement = document.createElement('span');
+      keyElement.classList.add(styles.helpMenuKey);
+      keyElement.textContent = key;
+
+      actionElement.innerHTML = `${keyElement.outerHTML} ${description}`;
+
+      return actionElement;
+    }
+
+    helpMenu.append(
+      generalActionsHeader,
+      ...generalActions.map(createActionElement),
+      museumActionsHeader,
+      ...museumActions.map(createActionElement),
+      menuActionsHeader,
+      ...menuActions.map(createActionElement)
+    );
+
+    interactionFrame.appendChild(helpMenu);
+
+    const { museumElement } = this.initialized!;
+
+    museumElement.appendChild(interactionFrame);
+
+    this.interactionContext = {
+      interactionFrame,
+    };
   }
 
   private getWallKey([y, x]: Position): string {
