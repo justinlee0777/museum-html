@@ -58,12 +58,6 @@ body {
   width: 100%;
 }
 
-.objectDescription {
-  box-sizing: border-box;
-  padding: 2em;
-  text-indent: 1em;
-}
-
 .helpMenu {
   align-items: center;
   box-sizing: border-box;

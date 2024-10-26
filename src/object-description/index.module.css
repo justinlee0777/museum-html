@@ -1,0 +1,17 @@
+.objectDescription {
+  box-sizing: border-box;
+  padding: 2em;
+}
+
+.artist,
+.title {
+  font-weight: bold;
+}
+
+.acquisition {
+  font-size: 0.8em;
+}
+
+.description {
+  text-indent: 1em;
+}

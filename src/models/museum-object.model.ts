@@ -18,7 +18,12 @@ type MuseumObjectInteractionLocation =
       sameAsObject: true;
     };
 
-type TextMusemObjectInteraction = MuseumObjectInteractionLocation & {
+export type TextMusemObjectInteraction = MuseumObjectInteractionLocation & {
+  artist: string;
+  title: string;
+  context: string;
+  make: string;
+  acquisition: string;
   description: string;
 };
 

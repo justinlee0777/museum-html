@@ -2,6 +2,7 @@ import LongPaintingSpriteImage from './src/assets/long-painting.png';
 import WallSpriteImage from './src/assets/wall-1.png';
 import TileSpriteImage from './src/assets/tile-1.png';
 import PlacardSpriteImage from './src/assets/placard.png';
+import FanSpriteImage from './src/assets/fan.png';
 
 import SPRITE_SIZE from './src/consts/sprite-size.const';
 import { MuseumWallType } from './src/models/museum-wall.model';
@@ -19,6 +20,18 @@ window.addEventListener('DOMContentLoaded', () => {
     cellSize,
     playerPosition: [0, 4],
     objects: [
+      {
+        origin: [2, 0],
+        height: 1,
+        width: 1,
+        sprite: 'fan',
+        interactions: [
+          {
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP104399.jpg',
+            sameAsObject: true,
+          },
+        ],
+      },
       {
         origin: [5, 0],
         height: 1,
@@ -70,6 +83,11 @@ window.addEventListener('DOMContentLoaded', () => {
         sprite: 'placard',
         interactions: [
           {
+            artist: 'Xu Yang',
+            title: `The Qianlong Emperor's Southern Inspection Tour, Scroll Four: The Confluence of the Huai and Yellow Rivers`,
+            context: 'Qing Dynasty (1644 - 1911), dated 1770',
+            make: 'Handscroll; ink and color on silk',
+            acquisition: 'Purchase, The Dillon Fund Gift, 1984 (1984.16)',
             description:
               'This scroll is the fourth in a set of twelve commissioned by the Qianlong Emperor to document his first tour in Southern China, made in 1751. The scroll portrays Qianlong inspecting flood-control measures along the Yellow River. He stands beside the spillway that directs the clear blue waters of the Huai River into the silt-laden Yellow River, diluting its sediment content and helping to flush the silt out to sea. The remainder of the scroll depicts various flood-prevention techniques, including double-sluice gates to reduce the force and flow of water in the Grand Canal, pounded-earth and stone-faced levees, and large bundles of sorghum used for repairing breaches in the dikes.',
             sameAsObject: true,
@@ -189,6 +207,13 @@ window.addEventListener('DOMContentLoaded', () => {
               };
 
               image.src = PlacardSpriteImage;
+              break;
+            case 'fan':
+              image.onload = () => {
+                drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+              };
+
+              image.src = FanSpriteImage;
               break;
           }
         },

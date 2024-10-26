@@ -15,6 +15,7 @@ import TileLayer from './layers/tile.layer';
 import ObjectLayer from './layers/object.layer';
 import WallLayer from './layers/wall.layer';
 import Painting from './painting';
+import ObjectDescription from './object-description';
 
 export default class Museum {
   private cells: Array<Array<Cell>>;
@@ -488,11 +489,11 @@ export default class Museum {
         let painting: Painting | undefined;
 
         if ('description' in interaction) {
-          const objectDescription = document.createElement('div');
-          objectDescription.textContent = interaction.description;
-          objectDescription.className = styles.objectDescription;
+          const objectDescription = new ObjectDescription(interaction);
 
-          interactionFrame.appendChild(objectDescription);
+          objectDescription.draw();
+
+          interactionFrame.appendChild(objectDescription.element!);
         } else {
           painting = new Painting(
             museumElement.clientHeight,
