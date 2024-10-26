@@ -6,8 +6,6 @@ import DrawSprite from '../sprites/models/draw-sprite.model';
 
 interface WallLayerArgs {
   cellSize: number;
-  height: number;
-  width: number;
 }
 
 interface WallPosition {
@@ -24,7 +22,7 @@ export default class WallLayer {
   ) {}
 
   draw(canvas: HTMLCanvasElement): void {
-    const { cellSize, height, width } = this.args;
+    const { cellSize } = this.args;
     const { cells, walls } = this;
 
     const context = canvas.getContext('2d')!;

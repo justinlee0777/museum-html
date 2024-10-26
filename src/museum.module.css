@@ -34,14 +34,14 @@ body {
   background-color: antiquewhite;
   border-radius: 2px;
   box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
-  box-sizing: border-box;
   max-height: 100%;
-  overflow-y: auto;
-  padding: 2em;
+  overflow: auto;
   position: absolute;
   width: 100%;
 }
 
 .objectDescription {
+  box-sizing: border-box;
+  padding: 2em;
   text-indent: 1em;
 }

@@ -26,19 +26,19 @@ window.addEventListener('DOMContentLoaded', () => {
         sprite: 'long-painting',
         interactions: [
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105278.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105286.jpg',
             position: [4, 0],
           },
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105279.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105285.jpg',
             position: [5, 0],
           },
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105280.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105284.jpg',
             position: [6, 0],
           },
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105281.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105283.jpg',
             position: [7, 0],
           },
           {
@@ -46,19 +46,19 @@ window.addEventListener('DOMContentLoaded', () => {
             position: [8, 0],
           },
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105283.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105281.jpg',
             position: [9, 0],
           },
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105284.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105280.jpg',
             position: [10, 0],
           },
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105285.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105279.jpg',
             position: [11, 0],
           },
           {
-            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105286.jpg',
+            url: 'https://images.metmuseum.org/CRDImages/as/original/DP105278.jpg',
             position: [12, 0],
           },
         ],

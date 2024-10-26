@@ -1,0 +1,7 @@
+.imageContainer {
+  position: relative;
+}
+
+.image {
+  transform-origin: top left;
+}

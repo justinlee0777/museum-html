@@ -4,8 +4,6 @@ import DrawSprite from '../sprites/models/draw-sprite.model';
 
 interface ObjectLayerArgs {
   cellSize: number;
-  height: number;
-  width: number;
 }
 
 export default class ObjectLayer {
@@ -16,7 +14,7 @@ export default class ObjectLayer {
   ) {}
 
   draw(canvas: HTMLCanvasElement): void {
-    const { cellSize, height, width } = this.args;
+    const { cellSize } = this.args;
 
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;

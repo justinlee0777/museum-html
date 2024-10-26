@@ -4,8 +4,6 @@ import DrawSprite from '../sprites/models/draw-sprite.model';
 
 interface TileLayerArgs {
   cellSize: number;
-  height: number;
-  width: number;
 }
 
 export default class TileLayer {
@@ -16,7 +14,7 @@ export default class TileLayer {
   ) {}
 
   draw(canvas: HTMLCanvasElement): void {
-    const { cellSize, height, width } = this.args;
+    const { cellSize } = this.args;
     const { cells } = this;
 
     const context = canvas.getContext('2d')!;

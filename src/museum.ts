@@ -14,6 +14,7 @@ import {
 import TileLayer from './layers/tile.layer';
 import ObjectLayer from './layers/object.layer';
 import WallLayer from './layers/wall.layer';
+import Painting from './painting';
 
 export default class Museum {
   private cells: Array<Array<Cell>>;
@@ -32,7 +33,12 @@ export default class Museum {
       }
     | undefined;
 
-  private interactionFrame: HTMLElement | undefined;
+  private interactionContext:
+    | {
+        interactionFrame: HTMLElement;
+        painting?: Painting;
+      }
+    | undefined;
 
   constructor(public args: MuseumArgs) {
     const { height, width, cellSize, playerPosition, objects, walls } = args;
@@ -105,17 +111,13 @@ export default class Museum {
     canvasElement.height = height;
     canvasElement.width = width;
 
-    const tileLayer = new TileLayer(
-      registries.tile,
-      { cellSize, height, width },
-      cells
-    );
+    const tileLayer = new TileLayer(registries.tile, { cellSize }, cells);
 
     tileLayer.draw(canvasElement);
 
     const wallLayer = new WallLayer(
       registries.wall,
-      { cellSize, height, width },
+      { cellSize },
       cells,
       walls
     );
@@ -124,7 +126,7 @@ export default class Museum {
 
     const objectLayer = new ObjectLayer(
       registries.object,
-      { cellSize, height, width },
+      { cellSize },
       objects
     );
 
@@ -155,6 +157,10 @@ export default class Museum {
       'Escape',
       'A',
       'a',
+      '-',
+      '=',
+      '_',
+      '+',
       'ArrowUp',
       'ArrowRight',
       'ArrowDown',
@@ -174,22 +180,34 @@ export default class Museum {
 
           try {
             switch (key) {
-              case 'ArrowUp':
-              case 'ArrowRight':
-              case 'ArrowDown':
-              case 'ArrowLeft':
-                if (!this.interactionFrame) {
-                  await this.movePlayer(key);
-                }
-                break;
               case 'A':
               case 'a':
                 this.openObjectDescription();
                 break;
               case 'Escape':
-                if (this.interactionFrame) {
-                  this.interactionFrame.remove();
-                  this.interactionFrame = undefined;
+                if (this.interactionContext) {
+                  this.interactionContext.interactionFrame.remove();
+                  this.interactionContext = undefined;
+                }
+                break;
+              case '-':
+              case '_':
+                if (this.interactionContext) {
+                  this.interactionContext.painting?.zoomOut();
+                }
+                break;
+              case '=':
+              case '+':
+                if (this.interactionContext) {
+                  this.interactionContext.painting?.zoomIn();
+                }
+                break;
+              case 'ArrowUp':
+              case 'ArrowRight':
+              case 'ArrowDown':
+              case 'ArrowLeft':
+                if (!this.interactionContext) {
+                  await this.movePlayer(key);
                 }
                 break;
               default:
@@ -440,15 +458,18 @@ export default class Museum {
       if (minX <= newX && maxX >= newX && minY <= newY && maxY >= newY) {
         const { museumElement } = this.initialized!;
 
-        if (this.interactionFrame) {
-          this.interactionFrame.remove();
+        if (this.interactionContext) {
+          this.interactionContext.interactionFrame.remove();
+          this.interactionContext = undefined;
         }
 
-        const interactionFrame = (this.interactionFrame =
-          document.createElement('div'));
+        const interactionFrame = document.createElement('div');
         interactionFrame.className = styles.interactionFrame;
-        interactionFrame.style.top = `${museumElement.scrollTop}px`;
+        interactionFrame.style.bottom = `0px`;
         interactionFrame.style.left = `${museumElement.scrollLeft}px`;
+        interactionFrame.tabIndex = 0;
+
+        let painting: Painting | undefined;
 
         if ('description' in interaction) {
           const objectDescription = document.createElement('div');
@@ -457,13 +478,25 @@ export default class Museum {
 
           interactionFrame.appendChild(objectDescription);
         } else {
-          const image = document.createElement('img');
-          image.src = interaction.url;
+          painting = new Painting(
+            museumElement.clientHeight,
+            museumElement.clientWidth,
+            interaction.url
+          );
 
-          interactionFrame.appendChild(image);
+          painting.draw();
+
+          interactionFrame.appendChild(painting.element!);
         }
 
         museumElement.appendChild(interactionFrame);
+
+        interactionFrame.focus();
+
+        this.interactionContext = {
+          interactionFrame,
+          painting,
+        };
 
         return;
       }
