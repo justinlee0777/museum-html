@@ -3,9 +3,6 @@ import styles from './museum.module.css';
 import Cell from './models/cell.model';
 import Position from './models/position.model';
 import MuseumArgs from './models/museum-args.model';
-import PlayerSprite, {
-  SpritePosture as PlayerSpritePosture,
-} from './sprites/player';
 import ANIMATION_RATE from './consts/animate-rate.const';
 import {
   MuseumObject,
@@ -16,6 +13,7 @@ import ObjectLayer from './layers/object.layer';
 import WallLayer from './layers/wall.layer';
 import Painting from './painting';
 import ObjectDescription from './object-description';
+import { PlayerSprite } from './models/player-sprite.model';
 
 export default class Museum {
   private cells: Array<Array<Cell>>;
@@ -42,7 +40,15 @@ export default class Museum {
     | undefined;
 
   constructor(public args: MuseumArgs) {
-    const { height, width, cellSize, playerPosition, objects, walls } = args;
+    const {
+      height,
+      width,
+      cellSize,
+      playerPosition,
+      objects,
+      walls,
+      registries: { player },
+    } = args;
 
     this.cells = Array(height)
       .fill(undefined)
@@ -89,11 +95,9 @@ export default class Museum {
 
     this.playerPosition = playerPosition;
 
-    const playerSprite = (this.playerSprite = new PlayerSprite({
-      cellSize,
-    }));
+    const playerSprite = (this.playerSprite = player);
 
-    playerSprite.draw(PlayerSpritePosture.DOWN_STANDING);
+    playerSprite.draw({ cellSize });
 
     playerSprite.sprite!.className = styles.player;
   }
@@ -341,28 +345,39 @@ export default class Museum {
     key: 'ArrowUp' | 'ArrowRight' | 'ArrowDown' | 'ArrowLeft'
   ) {
     const { playerPosition } = this;
+    const { cellSize } = this.args;
     const [x, y] = playerPosition;
 
-    let animation: () => Promise<void>, newPosition: Position;
+    let newPosition: Position, direction: 'up' | 'right' | 'down' | 'left';
 
     switch (key) {
       case 'ArrowUp':
-        animation = () => this.playerSprite.drawWalkingUp();
+        direction = 'up';
         newPosition = [x, y - 1];
         break;
       case 'ArrowRight':
-        animation = () => this.playerSprite.drawWalkingRight();
+        direction = 'right';
         newPosition = [x + 1, y];
         break;
       case 'ArrowDown':
-        animation = () => this.playerSprite.drawWalkingDown();
+        direction = 'down';
         newPosition = [x, y + 1];
         break;
       case 'ArrowLeft':
-        animation = () => this.playerSprite.drawWalkingLeft();
+        direction = 'left';
         newPosition = [x - 1, y];
         break;
     }
+
+    const animation = () =>
+      this.playerSprite.draw(
+        { cellSize },
+        {
+          direction,
+          animationTime: ANIMATION_RATE,
+          type: 'walk',
+        }
+      );
 
     if (!this.canUpdatePlayer(newPosition)) {
       newPosition = this.playerPosition;
@@ -451,8 +466,8 @@ export default class Museum {
 
       let ox: number,
         oy: number,
-        height = 0,
-        width = 0;
+        height = 1,
+        width = 1;
 
       if ('origin' in interaction) {
         [ox, oy] = interaction.origin;
@@ -473,10 +488,10 @@ export default class Museum {
       minX = ox;
       minY = oy;
       maxX = ox + width;
-      maxY = ox + height;
+      maxY = oy + height;
 
       // going to assume objects / interactions do not overlap.
-      if (minX <= newX && maxX >= newX && minY <= newY && maxY >= newY) {
+      if (minX <= newX && maxX > newX && minY <= newY && maxY > newY) {
         const { museumElement } = this.initialized!;
 
         if (this.interactionContext) {
