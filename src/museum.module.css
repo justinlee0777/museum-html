@@ -35,9 +35,7 @@ body {
 }
 
 .player {
-  left: 0;
   position: absolute;
-  top: 0;
 }
 
 .museumFrame {
@@ -56,25 +54,4 @@ body {
   overflow: auto;
   position: absolute;
   width: 100%;
-}
-
-.helpMenu {
-  align-items: center;
-  box-sizing: border-box;
-  display: flex;
-  flex-flow: row wrap;
-  gap: 1em;
-  padding: 2em;
-}
-
-.helpMenuKey {
-  font-weight: bold;
-}
-
-.helpMenuHeader {
-  flex: 1 1 100%;
-  margin: 0;
-}
-
-.destinationCell {
 }
