@@ -15,7 +15,7 @@ import {
   PlayerSpriteAction,
   PlayerSpriteArgs,
 } from './player-sprite.model';
-import Position from './position.model';
+import { Position } from './position.model';
 
 export {
   ObjectRegistry,

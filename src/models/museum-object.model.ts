@@ -1,4 +1,4 @@
-import Position from './position.model';
+import { Position } from './position.model';
 
 interface MuseumObjectSpot {
   position: Position;

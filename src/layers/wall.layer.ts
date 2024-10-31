@@ -1,6 +1,6 @@
 import Cell from '../models/cell.model';
 import { MuseumWall, MuseumWallType } from '../models/museum-wall.model';
-import Position from '../models/position.model';
+import { Position } from '../models/position.model';
 import WallRegistry from '../models/registries/wall-registry.model';
 import DrawSprite from '../sprites/models/draw-sprite.model';
 

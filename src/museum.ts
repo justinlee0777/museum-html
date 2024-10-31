@@ -1,7 +1,7 @@
 import styles from './museum.module.css';
 
 import Cell from './models/cell.model';
-import Position from './models/position.model';
+import { Position, ProposedPosition } from './models/position.model';
 import MuseumArgs from './models/museum-args.model';
 import ANIMATION_RATE from './consts/animate-rate.const';
 import {
@@ -14,6 +14,8 @@ import WallLayer from './layers/wall.layer';
 import Painting from './painting';
 import ObjectDescription from './object-description';
 import { PlayerSprite } from './models/player-sprite.model';
+import DestinationLayer from './layers/destination.layer';
+import { toPositions } from './utils/to-positions.function';
 
 export default class Museum {
   private cells: Array<Array<Cell>>;
@@ -29,6 +31,7 @@ export default class Museum {
         museumElement: HTMLElement;
         width: number;
         height: number;
+        destinationLayer: DestinationLayer;
       }
     | undefined;
 
@@ -38,6 +41,10 @@ export default class Museum {
         painting?: Painting;
       }
     | undefined;
+
+  private destinationPosition: Position | undefined;
+
+  private walkingLock: Symbol | undefined;
 
   constructor(public args: MuseumArgs) {
     const {
@@ -138,7 +145,17 @@ export default class Museum {
 
     objectLayer.draw(canvasElement);
 
-    museumElement.appendChild(canvasElement);
+    const destinationLayer = new DestinationLayer({
+      cellSize,
+      height,
+      width,
+      cells,
+      walls,
+    });
+
+    destinationLayer.draw();
+
+    museumElement.append(canvasElement, destinationLayer.element!);
 
     museumElement.appendChild(this.playerSprite.sprite!);
 
@@ -146,6 +163,7 @@ export default class Museum {
       museumElement,
       width,
       height,
+      destinationLayer,
     };
 
     this.drawPlayer();
@@ -243,6 +261,81 @@ export default class Museum {
     museumElement.addEventListener('keyup', (event) => {
       pressedKeys.delete(event.key);
       updatePlayer();
+    });
+
+    museumElement.addEventListener('click', async (event) => {
+      this.initialized?.museumElement.focus();
+
+      const { cellSize } = this.args;
+
+      const destinationPosition = (this.destinationPosition = [
+        Math.floor(event.x / cellSize),
+        Math.floor(event.y / cellSize),
+      ]);
+
+      const { destinationLayer } = this.initialized!;
+
+      const path = this.calculatePath(this.playerPosition, destinationPosition);
+
+      // Interactions are allowed by clicks if only the last position is invalid.
+      const allowInteraction = path.length < 2 ? true : path.at(-2)?.valid;
+
+      updatePlayerLock = true;
+      const walkingLock = (this.walkingLock = Symbol(
+        `This indicates the current click listener has the right to continue its own walking animation.`
+      ));
+
+      // Whether the current function invocation has lost the right to continue its walking animation.
+      let isLockedOut = false;
+
+      try {
+        while (path.length > 0) {
+          if (walkingLock !== this.walkingLock) {
+            isLockedOut = true;
+            return;
+          }
+
+          destinationLayer.draw({
+            path,
+          });
+
+          let key: 'ArrowUp' | 'ArrowRight' | 'ArrowDown' | 'ArrowLeft';
+
+          const {
+            position: [newX, newY],
+            valid,
+          } = path.shift()!;
+
+          if (!valid) {
+            break;
+          }
+
+          const [playerX, playerY] = this.playerPosition;
+
+          if (newY < playerY) {
+            key = 'ArrowUp';
+          } else if (newX > playerX) {
+            key = 'ArrowRight';
+          } else if (newY > playerY) {
+            key = 'ArrowDown';
+          } else if (newX < playerX) {
+            key = 'ArrowLeft';
+          } else {
+            throw new Error('There should be a change in this iteration.');
+          }
+
+          await this.movePlayer(key);
+        }
+      } finally {
+        if (!isLockedOut) {
+          updatePlayerLock = false;
+          destinationLayer.clear();
+
+          if (allowInteraction) {
+            this.openObjectDescription(destinationPosition);
+          }
+        }
+      }
     });
   }
 
@@ -410,41 +503,50 @@ export default class Museum {
     return interactionFrame;
   }
 
-  private openObjectDescription(): void {
+  /**
+   * TODO: this should probably look at the object in the cell rather than every object. That being said, I imagine
+   * performance loss is negligible ATM.
+   */
+  private openObjectDescription(destination?: Position): void {
     const {
       playerPosition: [px, py],
       playerSprite,
       args: { height, width, objects },
     } = this;
 
-    let newY = py,
-      newX = px;
+    let newY: number, newX: number;
 
-    switch (playerSprite.getDirection()) {
-      case 'Up':
-        newY = py - 1;
-        if (newY < 0) {
-          return;
-        }
-        break;
-      case 'Right':
-        newX = px + 1;
-        if (newX >= width) {
-          return;
-        }
-        break;
-      case 'Down':
-        newY = py + 1;
-        if (newY >= height) {
-          return;
-        }
-        break;
-      case 'Left':
-        newX = px - 1;
-        if (newX < 0) {
-          return;
-        }
-        break;
+    if (destination) {
+      [newX, newY] = destination;
+    } else {
+      (newY = py), (newX = px);
+
+      switch (playerSprite.getDirection()) {
+        case 'Up':
+          newY = py - 1;
+          if (newY < 0) {
+            return;
+          }
+          break;
+        case 'Right':
+          newX = px + 1;
+          if (newX >= width) {
+            return;
+          }
+          break;
+        case 'Down':
+          newY = py + 1;
+          if (newY >= height) {
+            return;
+          }
+          break;
+        case 'Left':
+          newX = px - 1;
+          if (newX < 0) {
+            return;
+          }
+          break;
+      }
     }
 
     const interactions = objects.reduce(
@@ -638,6 +740,51 @@ export default class Museum {
     this.interactionContext = {
       interactionFrame,
     };
+  }
+
+  private calculatePath(
+    [fromX, fromY]: Position,
+    [toX, toY]: Position
+  ): Array<ProposedPosition> {
+    const { cells } = this;
+    const { walls } = this.args;
+
+    const wallPositions = toPositions(walls);
+
+    const yBound = cells.length,
+      xBound = cells[0].length;
+
+    const path: Array<ProposedPosition> = [];
+
+    let currX = fromX,
+      currY = fromY,
+      valid = true;
+
+    while (!(currX === toX && currY === toY)) {
+      if (currY > toY) {
+        currY--;
+      } else if (currY < toY) {
+        currY++;
+      } else if (currX > toX) {
+        currX--;
+      } else if (currX < toX) {
+        currX++;
+      } else {
+        throw new Error('There should be a change in this iteration.');
+      }
+
+      if (currX < 0 || currY < 0 || currX >= xBound || currY >= yBound) {
+        return [];
+      } else if (
+        wallPositions.some(([wx, wy]) => wx === currX && wy === currY)
+      ) {
+        valid = false;
+      }
+
+      path.push({ position: [currX, currY], valid });
+    }
+
+    return path;
   }
 
   private getWallKey([y, x]: Position): string {
