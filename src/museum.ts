@@ -1,4 +1,4 @@
-import styles from './museum.module.css';
+import styles, { museumFrame } from './museum.module.css';
 
 import Cell from './models/cell.model';
 import { Position, ProposedPosition } from './models/position.model';
@@ -17,7 +17,12 @@ import { PlayerSprite } from './models/player-sprite.model';
 import DestinationLayer from './layers/destination.layer';
 import { toPositions } from './utils/to-positions.function';
 import HelpMenu from './help-menu';
+import OutOfFocusMessage from './out-of-focus-message';
+import detectMobile from './utils/detect-mobile.function';
+import { ButtonBarState, MobileButtonBar } from './mobile-button-bar';
 
+// Need to fully support mobile ex. help menu, zoom in/out, escape
+// Let's just implement it easy as buttons on the bottom right of the screen at a certain viewport
 export default class Museum {
   private cells: Array<Array<Cell>>;
 
@@ -30,6 +35,7 @@ export default class Museum {
   private initialized:
     | {
         museumElement: HTMLElement;
+        museumFrameElement: HTMLElement;
         width: number;
         height: number;
         destinationLayer: DestinationLayer;
@@ -43,9 +49,14 @@ export default class Museum {
       }
     | undefined;
 
-  private destinationPosition: Position | undefined;
+  private outOfFocusMessage: OutOfFocusMessage | undefined;
+
+  /** Defined only if @see onMobile is true. */
+  private mobileButtonBar: MobileButtonBar | undefined;
 
   private walkingLock: Symbol | undefined;
+
+  private onMobile: boolean;
 
   constructor(public args: MuseumArgs) {
     const {
@@ -108,6 +119,8 @@ export default class Museum {
     playerSprite.draw({ cellSize });
 
     playerSprite.sprite!.classList.add(styles.player);
+
+    this.onMobile = detectMobile();
   }
 
   draw(): HTMLElement {
@@ -120,6 +133,9 @@ export default class Museum {
     const museumElement = document.createElement('div');
     museumElement.tabIndex = 0;
     museumElement.className = styles.museum;
+
+    const museumFrameElement = document.createElement('div');
+    museumFrameElement.className = styles.museumFrame;
 
     const canvasElement = document.createElement('canvas');
     canvasElement.height = height;
@@ -156,12 +172,42 @@ export default class Museum {
 
     destinationLayer.draw();
 
-    museumElement.append(canvasElement, destinationLayer.element!);
+    museumFrameElement.append(canvasElement, destinationLayer.element!);
 
-    museumElement.appendChild(this.playerSprite.sprite!);
+    museumFrameElement.appendChild(this.playerSprite.sprite!);
+
+    museumElement.appendChild(museumFrameElement);
+
+    const mobileButtonBar = (this.mobileButtonBar = new MobileButtonBar({
+      mobile: this.onMobile,
+      walking: {
+        onhelpmenuopen: () => {
+          this.openHelpMenu();
+        },
+      },
+      examine: {
+        onclose: () => {
+          this.closeInteraction();
+        },
+        onzoomin: () => this.zoomInPainting(),
+        onzoomout: () => this.zoomOutPainting(),
+      },
+      helpMenu: {
+        onclose: () => {
+          this.closeInteraction();
+        },
+      },
+    }));
+
+    mobileButtonBar.draw(ButtonBarState.WALKING);
+
+    const mobileButtonBarElement = mobileButtonBar.element!;
+
+    museumElement.appendChild(mobileButtonBarElement);
 
     this.initialized = {
       museumElement,
+      museumFrameElement,
       width,
       height,
       destinationLayer,
@@ -207,11 +253,7 @@ export default class Museum {
           try {
             switch (key) {
               case 'Escape':
-                if (this.interactionContext) {
-                  this.interactionContext.interactionFrame.remove();
-                  this.interactionContext = undefined;
-                  this.initialized!.museumElement.focus();
-                }
+                this.closeInteraction();
                 break;
               case 'A':
               case 'a':
@@ -265,14 +307,19 @@ export default class Museum {
     });
 
     museumElement.addEventListener('click', async (event) => {
-      this.initialized?.museumElement.focus();
+      if (this.interactionContext) {
+        return;
+      }
+
+      const { museumFrameElement } = this.initialized!;
+      museumFrameElement.focus();
 
       const { cellSize } = this.args;
 
-      const destinationPosition = (this.destinationPosition = [
-        Math.floor(event.x / cellSize),
-        Math.floor(event.y / cellSize),
-      ]);
+      const destinationPosition: Position = [
+        Math.floor((museumFrameElement.scrollLeft + event.x) / cellSize),
+        Math.floor((museumFrameElement.scrollTop + event.y) / cellSize),
+      ];
 
       const { destinationLayer } = this.initialized!;
 
@@ -338,6 +385,34 @@ export default class Museum {
         }
       }
     });
+
+    const onMuseumBlur = () => {
+      const outOfFocusMessage = (this.outOfFocusMessage =
+        new OutOfFocusMessage());
+
+      outOfFocusMessage.draw();
+
+      const { museumElement } = this.initialized!;
+      const outOfFocusElement = outOfFocusMessage.element!;
+
+      museumElement.appendChild(outOfFocusElement);
+    };
+
+    museumElement.addEventListener('focusout', onMuseumBlur);
+
+    museumElement.addEventListener('focusin', () => {
+      const { museumElement } = this.initialized!;
+
+      if (this.outOfFocusMessage) {
+        museumElement.removeChild(this.outOfFocusMessage.element!);
+      }
+
+      this.outOfFocusMessage = undefined;
+    });
+
+    if (document.activeElement !== museumElement) {
+      onMuseumBlur();
+    }
   }
 
   private isObjectInCell(
@@ -405,13 +480,13 @@ export default class Museum {
       args: { cellSize },
     } = this;
 
-    const { museumElement } = this.initialized!;
+    const { museumFrameElement } = this.initialized!;
 
     const playerX = x * cellSize;
     const playerY = y * cellSize;
 
-    const diffX = museumElement.clientWidth / 2;
-    const diffY = museumElement.clientHeight / 2;
+    const diffX = museumFrameElement.clientWidth / 2;
+    const diffY = museumFrameElement.clientHeight / 2;
 
     return [Math.max(0, playerX - diffX), Math.max(0, playerY - diffY)];
   }
@@ -424,11 +499,11 @@ export default class Museum {
     this.playerSprite.sprite!.style.top = top;
     this.playerSprite.sprite!.style.left = left;
 
-    const { museumElement } = this.initialized!;
+    const { museumFrameElement } = this.initialized!;
 
     const [scrollLeft, scrollTop] = this.getCameraOrigin();
 
-    museumElement.scroll({
+    museumFrameElement.scroll({
       top: scrollTop,
       left: scrollLeft,
       behavior: 'smooth',
@@ -493,12 +568,8 @@ export default class Museum {
   }
 
   private createInteractionFrame(): HTMLElement {
-    const { museumElement } = this.initialized!;
-
     const interactionFrame = document.createElement('div');
     interactionFrame.className = styles.interactionFrame;
-    interactionFrame.style.bottom = `0px`;
-    interactionFrame.style.left = `${museumElement.scrollLeft}px`;
     interactionFrame.tabIndex = 0;
 
     return interactionFrame;
@@ -633,6 +704,8 @@ export default class Museum {
           painting,
         };
 
+        this.mobileButtonBar?.draw(ButtonBarState.EXAMINE);
+
         return;
       }
     }
@@ -646,7 +719,9 @@ export default class Museum {
 
     const interactionFrame = this.createInteractionFrame();
 
-    const helpMenu = new HelpMenu();
+    const helpMenu = new HelpMenu({
+      mobile: this.onMobile,
+    });
 
     helpMenu.draw();
 
@@ -659,6 +734,30 @@ export default class Museum {
     this.interactionContext = {
       interactionFrame,
     };
+
+    this.mobileButtonBar?.draw(ButtonBarState.HELP_MENU);
+  }
+
+  private closeInteraction(): void {
+    if (this.interactionContext) {
+      this.interactionContext.interactionFrame.remove();
+      this.interactionContext = undefined;
+      this.initialized!.museumElement.focus();
+
+      this.mobileButtonBar?.draw(ButtonBarState.WALKING);
+    }
+  }
+
+  private zoomInPainting(): void {
+    if (this.interactionContext) {
+      this.interactionContext.painting?.zoomIn();
+    }
+  }
+
+  private zoomOutPainting(): void {
+    if (this.interactionContext) {
+      this.interactionContext.painting?.zoomOut();
+    }
   }
 
   private calculatePath(

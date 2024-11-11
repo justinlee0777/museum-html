@@ -1,0 +1,25 @@
+.buttonBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  height: 100%;
+  padding: 0.5em;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 10;
+}
+
+.iconButton {
+  border: 1px solid black;
+  border-radius: 50%;
+  box-sizing: border-box;
+  height: 3em;
+  width: 3em;
+  text-align: center;
+}
+
+.imageIcon {
+  height: 100%;
+  width: 100%;
+}

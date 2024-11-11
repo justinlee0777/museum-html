@@ -1,5 +1,9 @@
 import styles from './index.module.css';
 
+interface HelpMenuConfig {
+  mobile: boolean;
+}
+
 export default class HelpMenu {
   private initialized:
     | {
@@ -10,6 +14,8 @@ export default class HelpMenu {
   get element(): HTMLElement | undefined {
     return this.initialized?.container;
   }
+
+  constructor(private config: HelpMenuConfig) {}
 
   draw(): void {
     interface Action {

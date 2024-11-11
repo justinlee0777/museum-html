@@ -4,7 +4,6 @@ body {
 }
 
 .museum {
-  box-sizing: border-box;
   display: inline-block;
   outline: none;
   overflow: hidden;
@@ -13,21 +12,6 @@ body {
   /** TODO **/
   max-height: 100vh;
   max-width: 100vw;
-}
-
-.museum:not(:focus-within):after {
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.3);
-  color: black;
-  content: 'The museum is not in focus. Please click it.';
-  display: flex;
-  font-size: 1.5em;
-  height: 100%;
-  justify-content: center;
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 100%;
 }
 
 .cell {
@@ -39,7 +23,7 @@ body {
 }
 
 .museumFrame {
-  border-radius: 2px;
+  display: inline-block;
   height: 100%;
   overflow: hidden;
   position: relative;
@@ -49,7 +33,9 @@ body {
 .interactionFrame {
   background-color: antiquewhite;
   border-radius: 2px;
+  bottom: 0;
   box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+  left: 0;
   max-height: 100%;
   overflow: auto;
   position: absolute;
