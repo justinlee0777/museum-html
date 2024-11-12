@@ -1,10 +1,14 @@
 {
-  "name": "museum",
+  "name": "museum-html",
   "type": "module",
+  "version": "0.0.1",
+  "exports": {
+    ".": "./index.js"
+  },
   "scripts": {
     "build": "rm -rf dist && rollup -c",
     "start": "rm -rf dev && rollup -c ./rollup.config.dev.js && http-server -c-1 -p 3000 dev",
-    "generate-room:text": "npm run build && node ./dist/text/index.js",
+    "release": "npm run build && npm publish ./dist",
     "format": "prettier --write ."
   },
   "devDependencies": {
