@@ -8,5 +8,5 @@ interface WallArgs {
 }
 
 export default interface WallRegistry {
-  draw(drawSprite: DrawSprite, args: WallArgs): void;
+  draw(drawSprite: DrawSprite, args: WallArgs): Promise<void>;
 }

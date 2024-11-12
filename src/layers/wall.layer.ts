@@ -21,7 +21,7 @@ export default class WallLayer {
     private walls: Array<MuseumWall>
   ) {}
 
-  draw(canvas: HTMLCanvasElement): void {
+  async draw(canvas: HTMLCanvasElement): Promise<void> {
     const { cellSize } = this.args;
     const { cells, walls } = this;
 
@@ -65,26 +65,30 @@ export default class WallLayer {
       }
     }
 
-    for (const {
-      position: [ox, oy],
-      wallType,
-    } of wallPositions.values()) {
-      const drawSprite: DrawSprite = (image, sx, sy, sw, sh) => {
-        context.drawImage(
-          image,
-          sx,
-          sy,
-          sw,
-          sh,
-          ox * cellSize,
-          oy * cellSize,
-          cellSize,
-          cellSize
-        );
-      };
+    await Promise.all(
+      [...wallPositions.values()].map(
+        async ({ position: [ox, oy], wallType }) => {
+          const drawSprite: DrawSprite = (image, sx, sy, sw, sh) => {
+            context.drawImage(
+              image,
+              sx,
+              sy,
+              sw,
+              sh,
+              ox * cellSize,
+              oy * cellSize,
+              cellSize,
+              cellSize
+            );
+          };
 
-      this.registry.draw(drawSprite, { cell: cells[oy][ox], wallType });
-    }
+          await this.registry.draw(drawSprite, {
+            cell: cells[oy][ox],
+            wallType,
+          });
+        }
+      )
+    );
   }
 
   private getWallKey([x, y]: Position): string {

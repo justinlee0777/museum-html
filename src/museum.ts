@@ -123,7 +123,7 @@ export default class Museum {
     this.onMobile = detectMobile();
   }
 
-  draw(): HTMLElement {
+  async draw(): Promise<HTMLElement> {
     const { cells } = this;
     const { cellSize, objects, walls, registries } = this.args;
 
@@ -141,9 +141,11 @@ export default class Museum {
     canvasElement.height = height;
     canvasElement.width = width;
 
+    const layerDraws: Array<Promise<void>> = [];
+
     const tileLayer = new TileLayer(registries.tile, { cellSize }, cells);
 
-    tileLayer.draw(canvasElement);
+    layerDraws.push(tileLayer.draw(canvasElement));
 
     const wallLayer = new WallLayer(
       registries.wall,
@@ -152,7 +154,7 @@ export default class Museum {
       walls
     );
 
-    wallLayer.draw(canvasElement);
+    layerDraws.push(wallLayer.draw(canvasElement));
 
     const objectLayer = new ObjectLayer(
       registries.object,
@@ -160,7 +162,9 @@ export default class Museum {
       objects
     );
 
-    objectLayer.draw(canvasElement);
+    layerDraws.push(objectLayer.draw(canvasElement));
+
+    await Promise.all(layerDraws);
 
     const destinationLayer = new DestinationLayer({
       cellSize,
@@ -297,11 +301,21 @@ export default class Museum {
     const { museumElement } = this.initialized!;
 
     museumElement.addEventListener('keydown', (event) => {
+      if (!this.interactionContext) {
+        // Prevent scrolling only if the user is walking.
+        event.preventDefault();
+      }
+
       pressedKeys.add(event.key);
       updatePlayer();
     });
 
     museumElement.addEventListener('keyup', (event) => {
+      if (!this.interactionContext) {
+        // Prevent scrolling only if the user is walking.
+        event.preventDefault();
+      }
+
       pressedKeys.delete(event.key);
       updatePlayer();
     });
@@ -316,9 +330,16 @@ export default class Museum {
 
       const { cellSize } = this.args;
 
+      const { x: museumFrameX, y: museumFrameY } =
+        museumFrameElement.getBoundingClientRect();
+
       const destinationPosition: Position = [
-        Math.floor((museumFrameElement.scrollLeft + event.x) / cellSize),
-        Math.floor((museumFrameElement.scrollTop + event.y) / cellSize),
+        Math.floor(
+          (museumFrameElement.scrollLeft + (event.x - museumFrameX)) / cellSize
+        ),
+        Math.floor(
+          (museumFrameElement.scrollTop + (event.y - museumFrameY)) / cellSize
+        ),
       ];
 
       const { destinationLayer } = this.initialized!;
@@ -684,11 +705,7 @@ export default class Museum {
 
           interactionFrame.appendChild(objectDescription.element!);
         } else {
-          painting = new Painting(
-            museumElement.clientHeight,
-            museumElement.clientWidth,
-            interaction.url
-          );
+          painting = new Painting(interaction.url);
 
           painting.draw();
 

@@ -6,5 +6,5 @@ interface ObjectArgs {
 }
 
 export default interface ObjectRegistry {
-  draw(drawSprite: DrawSprite, args: ObjectArgs): void;
+  draw(drawSprite: DrawSprite, args: ObjectArgs): Promise<void>;
 }

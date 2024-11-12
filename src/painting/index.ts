@@ -28,14 +28,10 @@ export default class Painting {
 
   private currentZoom = 1;
 
-  constructor(
-    private height: number,
-    private width: number,
-    private paintingUrl: string
-  ) {}
+  constructor(private paintingUrl: string) {}
 
   draw({ zoom }: DrawArgs = {}): void {
-    let { initialized, currentZoom, height, width } = this;
+    let { initialized, currentZoom } = this;
 
     if (zoom) {
       if ('offset' in zoom) {
@@ -73,8 +69,6 @@ export default class Painting {
       image = initialized.image;
     }
 
-    image.height = height;
-    image.width = width;
     image.src = this.paintingUrl;
     image.style.transform = `scale(${currentZoom}, ${currentZoom})`;
   }

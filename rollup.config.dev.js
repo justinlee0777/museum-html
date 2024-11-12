@@ -4,7 +4,7 @@ import postcss from 'rollup-plugin-postcss';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import image from '@rollup/plugin-image';
 
-const dir = 'dist';
+const dir = 'dev';
 
 const htmlConfig = {
   input: {
@@ -18,7 +18,9 @@ const htmlConfig = {
     nodeResolve({
       moduleDirectories: ['node_modules'],
     }),
-    typescript(),
+    typescript({
+      tsconfig: 'tsconfig.dev.json',
+    }),
     image(),
     postcss({
       modules: {

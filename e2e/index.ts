@@ -7,7 +7,7 @@ import FanSpriteImage from './assets/fan.png';
 import { Museum, MuseumWallType } from '../index';
 import TestPlayerSprite from './player-sprite';
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const height = 8;
   const width = 16;
 
@@ -128,36 +128,43 @@ window.addEventListener('DOMContentLoaded', () => {
         draw(drawSprite) {
           const image = new Image();
 
-          image.onload = () => {
-            drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
-          };
+          return new Promise((resolve) => {
+            image.onload = () => {
+              drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+              resolve();
+            };
 
-          image.src = TileSpriteImage;
+            image.src = TileSpriteImage;
+          });
         },
       },
       wall: {
         draw(drawSprite, { wallType }) {
           const image = new Image();
 
-          image.onload = () => {
-            let sx: number, sy: number;
+          return new Promise((resolve) => {
+            image.onload = () => {
+              let sx: number, sy: number;
 
-            switch (wallType) {
-              case MuseumWallType.VERTICAL:
-                (sx = 0), (sy = SPRITE_SIZE);
-                break;
-              case MuseumWallType.INTERSECTING:
-                (sx = 0), (sy = 0);
-                break;
-              default:
-                (sx = SPRITE_SIZE), (sy = 0);
-                break;
-            }
+              switch (wallType) {
+                case MuseumWallType.VERTICAL:
+                  (sx = 0), (sy = SPRITE_SIZE);
+                  break;
+                case MuseumWallType.INTERSECTING:
+                  (sx = 0), (sy = 0);
+                  break;
+                default:
+                  (sx = SPRITE_SIZE), (sy = 0);
+                  break;
+              }
 
-            drawSprite(image, sx, sy, SPRITE_SIZE, SPRITE_SIZE);
-          };
+              drawSprite(image, sx, sy, SPRITE_SIZE, SPRITE_SIZE);
 
-          image.src = WallSpriteImage;
+              resolve();
+            };
+
+            image.src = WallSpriteImage;
+          });
         },
       },
       object: {
@@ -170,60 +177,68 @@ window.addEventListener('DOMContentLoaded', () => {
 
           const image = new Image();
 
-          switch (sprite) {
-            case 'long-painting':
-              image.onload = () => {
-                // left side
-                drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+          return new Promise((resolve) => {
+            switch (sprite) {
+              case 'long-painting':
+                image.onload = () => {
+                  // left side
+                  drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
 
-                // middle
-                Array(width - 2)
-                  .fill(undefined)
-                  .forEach((_, i) => {
-                    drawSprite(
-                      image,
-                      SPRITE_SIZE,
-                      0,
-                      SPRITE_SIZE,
-                      SPRITE_SIZE,
-                      i + 1
-                    );
-                  });
+                  // middle
+                  Array(width - 2)
+                    .fill(undefined)
+                    .forEach((_, i) => {
+                      drawSprite(
+                        image,
+                        SPRITE_SIZE,
+                        0,
+                        SPRITE_SIZE,
+                        SPRITE_SIZE,
+                        i + 1
+                      );
+                    });
 
-                // right side
-                drawSprite(
-                  image,
-                  SPRITE_SIZE * 2,
-                  0,
-                  SPRITE_SIZE,
-                  SPRITE_SIZE,
-                  width - 1
-                );
-              };
+                  // right side
+                  drawSprite(
+                    image,
+                    SPRITE_SIZE * 2,
+                    0,
+                    SPRITE_SIZE,
+                    SPRITE_SIZE,
+                    width - 1
+                  );
 
-              image.src = LongPaintingSpriteImage;
-              break;
-            case 'placard':
-              image.onload = () => {
-                drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
-              };
+                  resolve();
+                };
 
-              image.src = PlacardSpriteImage;
-              break;
-            case 'fan':
-              image.onload = () => {
-                drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
-              };
+                image.src = LongPaintingSpriteImage;
+                break;
+              case 'placard':
+                image.onload = () => {
+                  drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
 
-              image.src = FanSpriteImage;
-              break;
-          }
+                  resolve();
+                };
+
+                image.src = PlacardSpriteImage;
+                break;
+              case 'fan':
+                image.onload = () => {
+                  drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+                  resolve();
+                };
+
+                image.src = FanSpriteImage;
+                break;
+            }
+          });
         },
       },
     },
   });
 
-  const museumElement = museum.draw();
+  const museumElement = await museum.draw();
 
   museum.addKeyListeners();
 

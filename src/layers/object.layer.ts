@@ -13,44 +13,46 @@ export default class ObjectLayer {
     private objects: Array<MuseumObject>
   ) {}
 
-  draw(canvas: HTMLCanvasElement): void {
+  async draw(canvas: HTMLCanvasElement): Promise<void> {
     const { cellSize } = this.args;
 
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;
 
-    for (const object of this.objects) {
-      let ox: number, oy: number;
+    await Promise.all(
+      this.objects.map(async (object) => {
+        let ox: number, oy: number;
 
-      if ('origin' in object) {
-        [ox, oy] = object.origin;
-      } else {
-        [ox, oy] = object.position;
-      }
+        if ('origin' in object) {
+          [ox, oy] = object.origin;
+        } else {
+          [ox, oy] = object.position;
+        }
 
-      const drawSprite: DrawSprite = (
-        image,
-        sx,
-        sy,
-        sw,
-        sh,
-        offsetX = 0,
-        offsetY = 0
-      ) => {
-        context.drawImage(
+        const drawSprite: DrawSprite = (
           image,
           sx,
           sy,
           sw,
           sh,
-          (ox + offsetX) * cellSize,
-          (oy + offsetY) * cellSize,
-          cellSize,
-          cellSize
-        );
-      };
+          offsetX = 0,
+          offsetY = 0
+        ) => {
+          context.drawImage(
+            image,
+            sx,
+            sy,
+            sw,
+            sh,
+            (ox + offsetX) * cellSize,
+            (oy + offsetY) * cellSize,
+            cellSize,
+            cellSize
+          );
+        };
 
-      this.registry.draw(drawSprite, { object });
-    }
+        await this.registry.draw(drawSprite, { object });
+      })
+    );
   }
 }

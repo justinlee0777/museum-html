@@ -6,5 +6,5 @@ interface TileArgs {
 }
 
 export default interface TileRegistry {
-  draw(drawSprite: DrawSprite, args: TileArgs): void;
+  draw(drawSprite: DrawSprite, args: TileArgs): Promise<void>;
 }

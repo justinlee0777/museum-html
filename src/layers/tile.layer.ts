@@ -13,12 +13,14 @@ export default class TileLayer {
     private cells: Array<Array<Cell>>
   ) {}
 
-  draw(canvas: HTMLCanvasElement): void {
+  async draw(canvas: HTMLCanvasElement): Promise<void> {
     const { cellSize } = this.args;
     const { cells } = this;
 
     const context = canvas.getContext('2d')!;
     context.imageSmoothingEnabled = false;
+
+    const drawOperations: Array<Promise<void>> = [];
 
     cells.forEach((row, j) => {
       row.forEach((cell, i) => {
@@ -36,8 +38,10 @@ export default class TileLayer {
           );
         };
 
-        this.registry.draw(drawSprite, { cell });
+        drawOperations.push(this.registry.draw(drawSprite, { cell }));
       });
     });
+
+    await Promise.all(drawOperations);
   }
 }
