@@ -1,17 +1,9 @@
-/** TODO **/
-body {
-  margin: 0;
-}
-
 .museum {
   display: inline-block;
   outline: none;
   overflow: hidden;
   position: relative;
   -webkit-line-break: unset;
-  /** TODO **/
-  max-height: 100vh;
-  max-width: 100vw;
 }
 
 .cell {

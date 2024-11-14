@@ -1,8 +1,8 @@
-import styles, { museumFrame } from './museum.module.css';
+import styles from './museum.module.css';
 
 import Cell from './models/cell.model';
-import { Position, ProposedPosition } from './models/position.model';
-import MuseumArgs from './models/museum-args.model';
+import { Position, ProposedPosition, Location } from './models/position.model';
+import { MuseumArgs } from './models/museum-args.model';
 import ANIMATION_RATE from './consts/animate-rate.const';
 import {
   MuseumObject,
@@ -20,10 +20,11 @@ import HelpMenu from './help-menu';
 import OutOfFocusMessage from './out-of-focus-message';
 import detectMobile from './utils/detect-mobile.function';
 import { ButtonBarState, MobileButtonBar } from './mobile-button-bar';
+import { OnExit } from './models/callbacks.model';
 
-// Need to fully support mobile ex. help menu, zoom in/out, escape
-// Let's just implement it easy as buttons on the bottom right of the screen at a certain viewport
-export default class Museum {
+export default class Museum<ExitPointData = void> {
+  public onexit?: OnExit<ExitPointData>;
+
   private cells: Array<Array<Cell>>;
 
   private wallPositions: Set<string>;
@@ -58,7 +59,7 @@ export default class Museum {
 
   private onMobile: boolean;
 
-  constructor(public args: MuseumArgs) {
+  constructor(public args: MuseumArgs<ExitPointData>) {
     const {
       height,
       width,
@@ -217,7 +218,20 @@ export default class Museum {
       destinationLayer,
     };
 
-    this.drawPlayer();
+    let observer: MutationObserver;
+    observer = new MutationObserver(() => {
+      if (document.contains(museumElement)) {
+        this.drawPlayer();
+        observer.disconnect();
+      }
+    });
+
+    observer.observe(document, {
+      attributes: false,
+      childList: true,
+      characterData: false,
+      subtree: true,
+    });
 
     return museumElement;
   }
@@ -436,28 +450,8 @@ export default class Museum {
     }
   }
 
-  private isObjectInCell(
-    [cellX, cellY]: Position,
-    object: MuseumObject
-  ): boolean {
-    let originX: number,
-      originY: number,
-      width = 1,
-      height = 1;
-
-    if ('origin' in object) {
-      [originX, originY] = object.origin;
-      ({ height, width } = object);
-    } else {
-      [originX, originY] = object.position;
-    }
-
-    return (
-      cellY >= originY &&
-      cellY < originY + height &&
-      cellX >= originX &&
-      cellX < originX + width
-    );
+  private isObjectInCell(position: Position, object: MuseumObject): boolean {
+    return this.withinBounds(object, position);
   }
 
   private canUpdatePlayer(newPosition: Position): boolean {
@@ -534,8 +528,8 @@ export default class Museum {
   private async movePlayer(
     key: 'ArrowUp' | 'ArrowRight' | 'ArrowDown' | 'ArrowLeft'
   ) {
-    const { playerPosition } = this;
-    const { cellSize } = this.args;
+    const { playerPosition, onexit } = this;
+    const { cellSize, exitPoints } = this.args;
     const [x, y] = playerPosition;
 
     let newPosition: Position, direction: 'up' | 'right' | 'down' | 'left';
@@ -586,6 +580,16 @@ export default class Museum {
     ]);
 
     await new Promise((resolve) => setTimeout(resolve, 1000 / 60));
+
+    if (exitPoints) {
+      const discoveredExitPoint = exitPoints?.find((exitPoint) =>
+        this.withinBounds(exitPoint, newPosition)
+      );
+
+      if (discoveredExitPoint) {
+        await onexit?.(discoveredExitPoint);
+      }
+    }
   }
 
   private createInteractionFrame(): HTMLElement {
@@ -657,36 +661,20 @@ export default class Museum {
     );
 
     for (const interaction of interactions) {
-      let minX: number, minY: number, maxX: number, maxY: number;
+      const newPosition: Position = [newX, newY];
 
-      let ox: number,
-        oy: number,
-        height = 1,
-        width = 1;
+      let withinBounds: boolean;
 
-      if ('origin' in interaction) {
-        [ox, oy] = interaction.origin;
-        ({ height, width } = interaction);
-      } else if ('position' in interaction) {
-        [ox, oy] = interaction.position;
+      if ('origin' in interaction || 'position' in interaction) {
+        withinBounds = this.withinBounds(interaction, newPosition);
       } else {
         const { object } = interaction;
 
-        if ('origin' in object) {
-          [ox, oy] = object.origin;
-          ({ height, width } = object);
-        } else {
-          [ox, oy] = object.position;
-        }
+        withinBounds = this.withinBounds(object, newPosition);
       }
 
-      minX = ox;
-      minY = oy;
-      maxX = ox + width;
-      maxY = oy + height;
-
       // going to assume objects / interactions do not overlap.
-      if (minX <= newX && maxX > newX && minY <= newY && maxY > newY) {
+      if (withinBounds) {
         const { museumElement } = this.initialized!;
 
         if (this.interactionContext) {
@@ -824,5 +812,21 @@ export default class Museum {
 
   private getWallKey([y, x]: Position): string {
     return `${y}-${x}`;
+  }
+
+  private withinBounds(location: Location, [cellX, cellY]: Position): boolean {
+    let x: number,
+      y: number,
+      height = 1,
+      width = 1;
+
+    if ('origin' in location) {
+      [x, y] = location.origin;
+      ({ height, width } = location);
+    } else {
+      [x, y] = location.position;
+    }
+
+    return cellY >= y && cellY < y + height && cellX >= x && cellX < x + width;
   }
 }

@@ -1,4 +1,4 @@
-import MuseumArgs from './museum-args.model';
+import { MuseumArgs } from './museum-args.model';
 
 export interface WalkingPlayerSpriteAction {
   direction: 'up' | 'right' | 'down' | 'left';

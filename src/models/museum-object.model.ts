@@ -1,19 +1,7 @@
-import { Position } from './position.model';
-
-interface MuseumObjectSpot {
-  position: Position;
-}
-
-interface MuseumObjectArea {
-  origin: Position;
-  width: number;
-  height: number;
-}
-
-type MuseumObjectLocation = MuseumObjectSpot | MuseumObjectArea;
+import { Location } from './position.model';
 
 type MuseumObjectInteractionLocation =
-  | MuseumObjectLocation
+  | Location
   | {
       sameAsObject: true;
     };
@@ -35,7 +23,7 @@ export type MuseumObjectInteraction =
   | TextMusemObjectInteraction
   | ImageMuseumObjectInteraction;
 
-export type MuseumObject = MuseumObjectLocation & {
+export type MuseumObject = Location & {
   sprite: string;
 
   interactions?: Array<MuseumObjectInteraction>;
