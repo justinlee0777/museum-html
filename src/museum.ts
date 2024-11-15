@@ -218,10 +218,11 @@ export default class Museum<ExitPointData = void> {
       destinationLayer,
     };
 
+    // As the player sprite is dependent on the sizing of the museum, we shall wait for the museum to be initialized before drawing the player
     let observer: MutationObserver;
     observer = new MutationObserver(() => {
       if (document.contains(museumElement)) {
-        this.drawPlayer();
+        this.drawPlayer(true);
         observer.disconnect();
       }
     });
@@ -232,6 +233,7 @@ export default class Museum<ExitPointData = void> {
       characterData: false,
       subtree: true,
     });
+    //
 
     return museumElement;
   }
@@ -506,7 +508,7 @@ export default class Museum<ExitPointData = void> {
     return [Math.max(0, playerX - diffX), Math.max(0, playerY - diffY)];
   }
 
-  private drawPlayer() {
+  private drawPlayer(initial = false) {
     const { playerPosition } = this;
 
     const [top, left] = this.getTopLeftValues(playerPosition);
@@ -521,7 +523,7 @@ export default class Museum<ExitPointData = void> {
     museumFrameElement.scroll({
       top: scrollTop,
       left: scrollLeft,
-      behavior: 'smooth',
+      behavior: initial ? undefined : 'smooth',
     });
   }
 
