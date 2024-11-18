@@ -16,10 +16,10 @@
 
 .museumFrame {
   display: inline-block;
-  height: 100%;
+  max-height: inherit;
+  max-width: inherit;
   overflow: hidden;
   position: relative;
-  width: 100%;
 }
 
 .interactionFrame {

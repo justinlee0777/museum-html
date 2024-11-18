@@ -15,19 +15,19 @@ import Painting from './painting';
 import ObjectDescription from './object-description';
 import { PlayerSprite } from './models/player-sprite.model';
 import DestinationLayer from './layers/destination.layer';
-import { toPositions } from './utils/to-positions.function';
 import HelpMenu from './help-menu';
 import OutOfFocusMessage from './out-of-focus-message';
 import detectMobile from './utils/detect-mobile.function';
 import { ButtonBarState, MobileButtonBar } from './mobile-button-bar';
 import { OnExit } from './models/callbacks.model';
+import { MuseumWall } from './models';
 
 export default class Museum<ExitPointData = void> {
   public onexit?: OnExit<ExitPointData>;
 
   private cells: Array<Array<Cell>>;
 
-  private wallPositions: Set<string>;
+  private impassablePositions: Set<string>;
 
   private playerPosition: Position;
 
@@ -92,20 +92,47 @@ export default class Museum<ExitPointData = void> {
           })
       );
 
-    const wallPositions = (this.wallPositions = new Set());
-    for (const wall of walls) {
-      const {
-        origin: [ox, oy],
-      } = wall;
+    const wallPositions = (this.impassablePositions = new Set());
+
+    const impassable = (walls as Array<MuseumWall | MuseumObject>).concat(
+      objects.filter((object) => object.impassable)
+    );
+
+    for (const impassableObj of impassable) {
       let range: Array<Position>;
-      if ('height' in wall) {
-        range = Array(wall.height)
+
+      if ('origin' in impassableObj) {
+        const {
+          origin: [ox, oy],
+        } = impassableObj;
+
+        let height = 1,
+          width = 1;
+
+        if ('height' in impassableObj) {
+          height = impassableObj.height;
+          range = Array(impassableObj.height)
+            .fill(undefined)
+            .map((_, i) => [ox, oy + i]);
+        }
+
+        if ('width' in impassableObj) {
+          width = impassableObj.width;
+        }
+
+        range = Array(width)
           .fill(undefined)
-          .map((_, i) => [ox, oy + i]);
+          .reduce((acc, _, i) => {
+            return acc.concat(
+              Array(height)
+                .fill(undefined)
+                .map((_, j) => [ox + i, oy + j])
+            );
+          }, []);
       } else {
-        range = Array(wall.width)
-          .fill(undefined)
-          .map((_, i) => [ox + i, oy]);
+        const { position } = impassableObj;
+
+        range = [position];
       }
 
       for (const position of range) {
@@ -463,7 +490,7 @@ export default class Museum<ExitPointData = void> {
       newPosition.every((pos) => pos >= 0) &&
       newPosition[0] < width &&
       newPosition[1] < height &&
-      !this.wallPositions.has(this.getWallKey(newPosition))
+      !this.impassablePositions.has(this.getWallKey(newPosition))
     );
   }
 
@@ -589,6 +616,8 @@ export default class Museum<ExitPointData = void> {
       );
 
       if (discoveredExitPoint) {
+        // Kill the current walking animation
+        this.walkingLock = undefined;
         await onexit?.(discoveredExitPoint);
       }
     }
@@ -695,7 +724,7 @@ export default class Museum<ExitPointData = void> {
 
           interactionFrame.appendChild(objectDescription.element!);
         } else {
-          painting = new Painting(interaction.url);
+          painting = new Painting(interaction);
 
           painting.draw();
 
@@ -771,10 +800,7 @@ export default class Museum<ExitPointData = void> {
     [fromX, fromY]: Position,
     [toX, toY]: Position
   ): Array<ProposedPosition> {
-    const { cells } = this;
-    const { walls } = this.args;
-
-    const wallPositions = toPositions(walls);
+    const { cells, impassablePositions } = this;
 
     const yBound = cells.length,
       xBound = cells[0].length;
@@ -784,6 +810,8 @@ export default class Museum<ExitPointData = void> {
     let currX = fromX,
       currY = fromY,
       valid = true;
+
+    const impassableArr = [...impassablePositions].map(this.decodeWallKey);
 
     while (!(currX === toX && currY === toY)) {
       if (currY > toY) {
@@ -801,7 +829,7 @@ export default class Museum<ExitPointData = void> {
       if (currX < 0 || currY < 0 || currX >= xBound || currY >= yBound) {
         return [];
       } else if (
-        wallPositions.some(([wx, wy]) => wx === currX && wy === currY)
+        impassableArr.some(([wx, wy]) => wx === currX && wy === currY)
       ) {
         valid = false;
       }
@@ -812,8 +840,14 @@ export default class Museum<ExitPointData = void> {
     return path;
   }
 
-  private getWallKey([y, x]: Position): string {
-    return `${y}-${x}`;
+  private getWallKey([x, y]: Position): string {
+    return `${x}-${y}`;
+  }
+
+  private decodeWallKey(wallKey: string): Position {
+    const [, x, y] = wallKey.match(/(\d+)-(\d+)/)!;
+
+    return [Number(x), Number(y)];
   }
 
   private withinBounds(location: Location, [cellX, cellY]: Position): boolean {

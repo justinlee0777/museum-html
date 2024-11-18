@@ -1,3 +1,4 @@
+import { ImageMuseumObjectInteraction } from '../models/museum-object.model';
 import styles from './index.module.css';
 
 interface IncrementZoomArgs {
@@ -28,10 +29,14 @@ export default class Painting {
 
   private currentZoom = 1;
 
-  constructor(private paintingUrl: string) {}
+  constructor(private imageInteraction: ImageMuseumObjectInteraction) {}
 
   draw({ zoom }: DrawArgs = {}): void {
-    let { initialized, currentZoom } = this;
+    let {
+      initialized,
+      currentZoom,
+      imageInteraction: { url },
+    } = this;
 
     if (zoom) {
       if ('offset' in zoom) {
@@ -69,7 +74,7 @@ export default class Painting {
       image = initialized.image;
     }
 
-    image.src = this.paintingUrl;
+    image.src = url;
     image.style.transform = `scale(${currentZoom}, ${currentZoom})`;
   }
 

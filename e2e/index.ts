@@ -28,10 +28,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const museumElement = await museum.draw();
 
-    /**
-     * CHANGE CAMERA
-     */
-
     museum.addKeyListeners();
 
     document.body.appendChild(museumElement);

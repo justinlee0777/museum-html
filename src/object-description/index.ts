@@ -13,48 +13,65 @@ export default class ObjectDescription {
     return this.initialized?.container;
   }
 
-  constructor(private object: TextMusemObjectInteraction) {}
+  constructor(private object: Partial<TextMusemObjectInteraction>) {}
 
-  draw(): void {
+  draw(): HTMLElement {
     const { artist, title, context, make, acquisition, description } =
       this.object;
 
     const container = document.createElement('div');
     container.className = styles.objectDescription;
 
-    const artistElement = document.createElement('p');
-    artistElement.className = styles.artist;
-    artistElement.textContent = artist;
+    if (artist) {
+      const artistElement = document.createElement('p');
+      artistElement.className = styles.artist;
+      artistElement.textContent = artist;
 
-    const titleElement = document.createElement('p');
-    titleElement.className = styles.title;
-    titleElement.textContent = title;
+      container.appendChild(artistElement);
+    }
 
-    const contextElement = document.createElement('p');
-    contextElement.textContent = context;
+    if (title) {
+      const titleElement = document.createElement('p');
+      titleElement.className = styles.title;
+      titleElement.textContent = title;
 
-    const makeElement = document.createElement('p');
-    makeElement.textContent = make;
+      container.appendChild(titleElement);
+    }
 
-    const acquisitionElement = document.createElement('p');
-    acquisitionElement.className = styles.acquisition;
-    acquisitionElement.textContent = acquisition;
+    if (context) {
+      const contextElement = document.createElement('p');
+      contextElement.textContent = context;
 
-    const descriptionElement = document.createElement('p');
-    descriptionElement.className = styles.description;
-    descriptionElement.textContent = description;
+      container.appendChild(contextElement);
+    }
 
-    container.append(
-      artistElement,
-      titleElement,
-      contextElement,
-      makeElement,
-      acquisitionElement,
-      descriptionElement
-    );
+    if (make) {
+      const makeElement = document.createElement('p');
+      makeElement.textContent = make;
+
+      container.appendChild(makeElement);
+    }
+
+    if (acquisition) {
+      const acquisitionElement = document.createElement('p');
+      acquisitionElement.className = styles.acquisition;
+      acquisitionElement.textContent = acquisition;
+
+      container.appendChild(acquisitionElement);
+    }
+
+    if (description) {
+      const descriptionElement = document.createElement('p');
+      descriptionElement.className = styles.description;
+      descriptionElement.textContent = description;
+
+      container.appendChild(descriptionElement);
+    }
 
     this.initialized = {
       container,
     };
+
+    return container;
   }
 }

@@ -15,7 +15,7 @@ export type TextMusemObjectInteraction = MuseumObjectInteractionLocation & {
   description: string;
 };
 
-type ImageMuseumObjectInteraction = MuseumObjectInteractionLocation & {
+export type ImageMuseumObjectInteraction = MuseumObjectInteractionLocation & {
   url: string;
 };
 
@@ -27,4 +27,6 @@ export type MuseumObject = Location & {
   sprite: string;
 
   interactions?: Array<MuseumObjectInteraction>;
+  impassable?: boolean;
+  metadata?: any;
 };

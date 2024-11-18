@@ -8,7 +8,13 @@ import TileRegistry from './registries/tile-registry.model';
 import WallRegistry from './registries/wall-registry.model';
 
 export interface MuseumArgs<ExitPointData = void> {
+  /**
+   * Width of the museum in cells.
+   */
   width: number;
+  /**
+   * Height of the museum in cells.
+   */
   height: number;
   playerPosition: Position;
   cellSize: number;
