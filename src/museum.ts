@@ -171,11 +171,9 @@ export default class Museum<ExitPointData = void> {
     canvasElement.height = height;
     canvasElement.width = width;
 
-    const layerDraws: Array<Promise<void>> = [];
-
     const tileLayer = new TileLayer(registries.tile, { cellSize }, cells);
 
-    layerDraws.push(tileLayer.draw(canvasElement));
+    await tileLayer.draw(canvasElement);
 
     const wallLayer = new WallLayer(
       registries.wall,
@@ -184,7 +182,7 @@ export default class Museum<ExitPointData = void> {
       walls
     );
 
-    layerDraws.push(wallLayer.draw(canvasElement));
+    await wallLayer.draw(canvasElement);
 
     const objectLayer = new ObjectLayer(
       registries.object,
@@ -192,9 +190,7 @@ export default class Museum<ExitPointData = void> {
       objects
     );
 
-    layerDraws.push(objectLayer.draw(canvasElement));
-
-    await Promise.all(layerDraws);
+    await objectLayer.draw(canvasElement);
 
     const destinationLayer = new DestinationLayer({
       cellSize,
