@@ -4,7 +4,9 @@ import closeIcon from '../assets/close_24dp_5F6368.svg';
 
 export enum ButtonBarState {
   WALKING,
-  EXAMINE,
+  EXAMINE_PAINTING,
+  EXAMINE_TEXT,
+  EXAMINE_FRAME,
   HELP_MENU,
 }
 
@@ -16,10 +18,16 @@ export interface MobileButtonBarConfig {
   helpMenu: {
     onclose: () => void;
   };
-  examine: {
+  examinePainting: {
     onclose: () => void;
     onzoomin: () => void;
     onzoomout: () => void;
+  };
+  examineText: {
+    onclose: () => void;
+  };
+  examineFrame: {
+    onclose: () => void;
   };
 }
 
@@ -56,8 +64,14 @@ export class MobileButtonBar {
       case ButtonBarState.WALKING:
         this.drawWalkButtons();
         break;
-      case ButtonBarState.EXAMINE:
-        this.drawExamineButtons();
+      case ButtonBarState.EXAMINE_TEXT:
+        this.drawExamineButtons(this.config.examineText.onclose);
+        break;
+      case ButtonBarState.EXAMINE_FRAME:
+        this.drawExamineButtons(this.config.examineFrame.onclose);
+        break;
+      case ButtonBarState.EXAMINE_PAINTING:
+        this.drawExaminePaintingButtons();
         break;
       case ButtonBarState.HELP_MENU:
         this.drawHelpMenuButtons();
@@ -91,10 +105,10 @@ export class MobileButtonBar {
     }
   }
 
-  private drawExamineButtons(): void {
+  private drawExaminePaintingButtons(): void {
     const { container } = this.initialized!;
     const {
-      examine: { onclose, onzoomin, onzoomout },
+      examinePainting: { onclose, onzoomin, onzoomout },
     } = this.config;
 
     const closeHelp = document.createElement('button');
@@ -137,6 +151,28 @@ export class MobileButtonBar {
       const {
         helpMenu: { onclose },
       } = this.config;
+
+      const closeHelp = document.createElement('button');
+      closeHelp.classList.add(styles.iconButton);
+
+      const closeHelpIcon = document.createElement('img');
+      closeHelpIcon.className = styles.imageIcon;
+      closeHelpIcon.src = closeIcon;
+
+      closeHelp.appendChild(closeHelpIcon);
+
+      closeHelp.onclick = (event) => {
+        event.stopPropagation();
+        onclose();
+      };
+
+      container.appendChild(closeHelp);
+    }
+  }
+
+  private drawExamineButtons(onclose: () => void): void {
+    if (!this.config.mobile) {
+      const { container } = this.initialized!;
 
       const closeHelp = document.createElement('button');
       closeHelp.classList.add(styles.iconButton);

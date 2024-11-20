@@ -1,8 +1,10 @@
 import LongPaintingSpriteImage from './assets/long-painting.png';
+import PaintingSpriteImage from './assets/painting.png';
 import WallSpriteImage from './assets/wall-1.png';
 import TileSpriteImage from './assets/tile-1.png';
 import PlacardSpriteImage from './assets/placard.png';
 import FanSpriteImage from './assets/fan.png';
+import FrameImage from './assets/frame.png';
 
 import { MuseumWallType } from '../index';
 import TestPlayerSprite from './player-sprite';
@@ -118,6 +120,51 @@ export const registries: MuseumArgs['registries'] = {
             };
 
             image.src = FanSpriteImage;
+            break;
+        }
+      });
+    },
+  },
+  frame: {
+    async drawFrame(drawSprite, { frameHeight, position: [, y] }) {
+      const image = new Image();
+
+      return new Promise((resolve) => {
+        image.onload = () => {
+          if (y === frameHeight - 1) {
+            drawSprite(image, 0, SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE);
+          } else {
+            drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+          }
+
+          resolve();
+        };
+
+        image.src = FrameImage;
+      });
+    },
+    async drawObject(drawSprite, interaction) {
+      const image = new Image();
+
+      return new Promise((resolve) => {
+        switch (interaction.sprite) {
+          case 'painting':
+            image.onload = () => {
+              drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+              resolve();
+            };
+
+            image.src = PaintingSpriteImage;
+            break;
+          case 'placard':
+            image.onload = () => {
+              drawSprite(image, 0, 0, SPRITE_SIZE, SPRITE_SIZE);
+
+              resolve();
+            };
+
+            image.src = PlacardSpriteImage;
             break;
         }
       });

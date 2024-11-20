@@ -3,6 +3,7 @@ import { MuseumObject } from './museum-object.model';
 import { MuseumWall } from './museum-wall.model';
 import { PlayerSprite } from './player-sprite.model';
 import { Position } from './position.model';
+import FrameRegistry from './registries/frame-registry.model';
 import ObjectRegistry from './registries/object-registry.model';
 import TileRegistry from './registries/tile-registry.model';
 import WallRegistry from './registries/wall-registry.model';
@@ -27,6 +28,8 @@ export interface MuseumArgs<ExitPointData = void> {
     tile: TileRegistry;
     object: ObjectRegistry;
     wall: WallRegistry;
+    /** You must define this if you decide to use composite interactions i.e. @see CompositeMuseumObjectInteraction */
+    frame?: FrameRegistry;
   };
 
   exitPoints?: Array<ExitPoint<ExitPointData>>;

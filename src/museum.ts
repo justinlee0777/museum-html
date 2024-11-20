@@ -21,6 +21,7 @@ import detectMobile from './utils/detect-mobile.function';
 import { ButtonBarState, MobileButtonBar } from './mobile-button-bar';
 import { OnExit } from './models/callbacks.model';
 import { MuseumWall } from './models';
+import { Frame } from './frame';
 
 export default class Museum<ExitPointData = void> {
   public onexit?: OnExit<ExitPointData>;
@@ -47,6 +48,7 @@ export default class Museum<ExitPointData = void> {
     | {
         interactionFrame: HTMLElement;
         painting?: Painting;
+        frame?: Frame;
       }
     | undefined;
 
@@ -217,12 +219,18 @@ export default class Museum<ExitPointData = void> {
           this.openHelpMenu();
         },
       },
-      examine: {
+      examinePainting: {
         onclose: () => {
           this.closeInteraction();
         },
         onzoomin: () => this.zoomInPainting(),
         onzoomout: () => this.zoomOutPainting(),
+      },
+      examineFrame: {
+        onclose: () => this.closeInteraction(),
+      },
+      examineText: {
+        onclose: () => this.closeInteraction(),
       },
       helpMenu: {
         onclose: () => {
@@ -268,6 +276,8 @@ export default class Museum<ExitPointData = void> {
   /*
    * TODO Wondering if there's any wisdom in ripping out the event system directly from the museum itself
    * and abstracting these actions.
+   * Something to refactor is the large switch statement. An idea would be to break the switch statement into multiple switch statements,
+   * mapped to the current state of the application.
    */
   addKeyListeners(): void {
     const pressedKeys: Set<String> = new Set();
@@ -304,10 +314,20 @@ export default class Museum<ExitPointData = void> {
                 break;
               case 'A':
               case 'a':
-                this.openObjectDescription();
+                if (this.interactionContext) {
+                  const { frame } = this.interactionContext;
+
+                  if (frame) {
+                    frame.select();
+                  }
+                } else {
+                  await this.searchAndOpenInteraction();
+                }
                 break;
               case 'Enter':
-                this.openHelpMenu();
+                if (!this.interactionContext) {
+                  this.openHelpMenu();
+                }
                 break;
               case '-':
               case '_':
@@ -325,7 +345,13 @@ export default class Museum<ExitPointData = void> {
               case 'ArrowRight':
               case 'ArrowDown':
               case 'ArrowLeft':
-                if (!this.interactionContext) {
+                if (this.interactionContext) {
+                  const { frame } = this.interactionContext;
+
+                  if (frame) {
+                    frame.selectNext(key);
+                  }
+                } else {
                   await this.movePlayer(key);
                 }
                 break;
@@ -344,8 +370,10 @@ export default class Museum<ExitPointData = void> {
     const { museumElement } = this.initialized!;
 
     museumElement.addEventListener('keydown', (event) => {
-      if (!this.interactionContext) {
-        // Prevent scrolling only if the user is walking.
+      const { interactionContext } = this;
+
+      if (!interactionContext || interactionContext.frame) {
+        // Prevent scrolling if the user is walking or objects are being chosen in a frame.
         event.preventDefault();
       }
 
@@ -354,8 +382,10 @@ export default class Museum<ExitPointData = void> {
     });
 
     museumElement.addEventListener('keyup', (event) => {
-      if (!this.interactionContext) {
-        // Prevent scrolling only if the user is walking.
+      const { interactionContext } = this;
+
+      if (!interactionContext || interactionContext.frame) {
+        // Prevent scrolling if the user is walking or objects are being chosen in a frame.
         event.preventDefault();
       }
 
@@ -444,7 +474,7 @@ export default class Museum<ExitPointData = void> {
           destinationLayer.clear();
 
           if (allowInteraction) {
-            this.openObjectDescription(destinationPosition);
+            await this.searchAndOpenInteraction(destinationPosition);
           }
         }
       }
@@ -631,11 +661,9 @@ export default class Museum<ExitPointData = void> {
     return interactionFrame;
   }
 
-  /**
-   * TODO: this should probably look at the object in the cell rather than every object. That being said, I imagine
-   * performance loss is negligible ATM.
-   */
-  private openObjectDescription(destination?: Position): void {
+  private async searchAndOpenInteraction(
+    destination?: Position
+  ): Promise<void> {
     const {
       playerPosition: [px, py],
       playerSprite,
@@ -706,45 +734,80 @@ export default class Museum<ExitPointData = void> {
 
       // going to assume objects / interactions do not overlap.
       if (withinBounds) {
-        const { museumElement } = this.initialized!;
-
-        if (this.interactionContext) {
-          this.interactionContext.interactionFrame.remove();
-          this.interactionContext = undefined;
-        }
-
-        const interactionFrame = this.createInteractionFrame();
-
-        let painting: Painting | undefined;
-
-        if ('description' in interaction) {
-          const objectDescription = new ObjectDescription(interaction);
-
-          objectDescription.draw();
-
-          interactionFrame.appendChild(objectDescription.element!);
-        } else {
-          painting = new Painting(interaction);
-
-          painting.draw();
-
-          interactionFrame.appendChild(painting.element!);
-        }
-
-        museumElement.appendChild(interactionFrame);
-
-        interactionFrame.focus();
-
-        this.interactionContext = {
-          interactionFrame,
-          painting,
-        };
-
-        this.mobileButtonBar?.draw(ButtonBarState.EXAMINE);
+        this.openObjectDescription(interaction);
 
         return;
       }
     }
+  }
+
+  /**
+   * TODO: this should probably look at the object in the cell rather than every object. That being said, I imagine
+   * performance loss is negligible ATM.
+   */
+  private async openObjectDescription(
+    interaction: MuseumObjectInteraction
+  ): Promise<void> {
+    const { cellSize } = this.args;
+    const { museumElement } = this.initialized!;
+
+    if (this.interactionContext) {
+      this.interactionContext.interactionFrame.remove();
+      this.interactionContext = undefined;
+    }
+
+    const interactionFrame = this.createInteractionFrame();
+
+    let painting: Painting | undefined,
+      frame: Frame | undefined,
+      buttonBarState: ButtonBarState;
+
+    if ('description' in interaction) {
+      buttonBarState = ButtonBarState.EXAMINE_TEXT;
+
+      const objectDescription = new ObjectDescription(interaction);
+
+      objectDescription.draw();
+
+      interactionFrame.appendChild(objectDescription.element!);
+    } else if ('url' in interaction) {
+      buttonBarState = ButtonBarState.EXAMINE_PAINTING;
+
+      painting = new Painting(interaction);
+
+      painting.draw();
+
+      interactionFrame.appendChild(painting.element!);
+    } else {
+      buttonBarState = ButtonBarState.EXAMINE_FRAME;
+
+      frame = new Frame(
+        {
+          cellSize,
+          interaction,
+          onselect: (interaction) => {
+            this.openObjectDescription(interaction);
+          },
+        },
+        this.args.registries.frame!
+      );
+
+      const frameElement = await frame.draw();
+
+      interactionFrame.appendChild(frameElement);
+    }
+
+    museumElement.appendChild(interactionFrame);
+
+    interactionFrame.focus();
+
+    this.interactionContext = {
+      interactionFrame,
+      painting,
+      frame,
+    };
+
+    this.mobileButtonBar?.draw(buttonBarState);
   }
 
   private openHelpMenu(): void {

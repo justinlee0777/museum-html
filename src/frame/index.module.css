@@ -1,0 +1,20 @@
+.frameContainer {
+  display: inline-block;
+  position: relative;
+}
+
+.frame {
+  image-rendering: pixelated;
+}
+
+.frameObject {
+  box-sizing: border-box;
+  image-rendering: pixelated;
+  position: absolute;
+}
+
+.frameObjectSelected {
+  border: 0.5em solid rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  transform: translate(-0.5em, -0.5em);
+}

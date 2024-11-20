@@ -28,6 +28,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const museumElement = await museum.draw();
 
+    museumElement.style.maxWidth = '100%';
+
     museum.addKeyListeners();
 
     document.body.appendChild(museumElement);

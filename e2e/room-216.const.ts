@@ -29,7 +29,29 @@ export const room216Args: MuseumPartial = {
       sprite: 'fan',
       interactions: [
         {
-          url: 'https://images.metmuseum.org/CRDImages/as/original/DP104399.jpg',
+          frame: {
+            width: 5,
+            height: 7,
+          },
+          objects: [
+            {
+              origin: [1, 1],
+              width: 3,
+              height: 3,
+              url: 'https://images.metmuseum.org/CRDImages/as/original/DP104399.jpg',
+              sprite: 'painting',
+            },
+            {
+              position: [2, 5],
+              sprite: 'placard',
+              artist: 'Me',
+              title: 'Foo',
+              acquisition: '',
+              context: '',
+              make: '',
+              description: '',
+            },
+          ],
           sameAsObject: true,
         },
       ],
