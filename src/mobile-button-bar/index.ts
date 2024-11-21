@@ -171,24 +171,22 @@ export class MobileButtonBar {
   }
 
   private drawExamineButtons(onclose: () => void): void {
-    if (!this.config.mobile) {
-      const { container } = this.initialized!;
+    const { container } = this.initialized!;
 
-      const closeHelp = document.createElement('button');
-      closeHelp.classList.add(styles.iconButton);
+    const closeHelp = document.createElement('button');
+    closeHelp.classList.add(styles.iconButton);
 
-      const closeHelpIcon = document.createElement('img');
-      closeHelpIcon.className = styles.imageIcon;
-      closeHelpIcon.src = closeIcon;
+    const closeHelpIcon = document.createElement('img');
+    closeHelpIcon.className = styles.imageIcon;
+    closeHelpIcon.src = closeIcon;
 
-      closeHelp.appendChild(closeHelpIcon);
+    closeHelp.appendChild(closeHelpIcon);
 
-      closeHelp.onclick = (event) => {
-        event.stopPropagation();
-        onclose();
-      };
+    closeHelp.onclick = (event) => {
+      event.stopPropagation();
+      onclose();
+    };
 
-      container.appendChild(closeHelp);
-    }
+    container.appendChild(closeHelp);
   }
 }
